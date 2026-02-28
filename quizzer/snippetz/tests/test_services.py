@@ -178,3 +178,42 @@ class TestQuizSessionResults:
         quiz.start()
         quiz.reset()
         assert request_with_session.session.get("quiz") is None
+
+
+@pytest.mark.django_db
+class TestQuizSessionChoices:
+    def test_choices_always_includes_correct_answer(
+        self, request_with_session, snippets
+    ):
+        quiz = QuizSession(request_with_session)
+        snippet = snippets[0]
+        choices = quiz.get_choices_for_snippet(snippet)
+        assert snippet.first_appearance in choices
+
+    def test_choices_limited_to_4(self, request_with_session, snippets, versions):
+        # Ensure more than 4 versions exist
+        PythonVersion.objects.create(major=3, minor=11)
+        PythonVersion.objects.create(major=3, minor=12)
+        quiz = QuizSession(request_with_session)
+        snippet = snippets[0]
+        choices = quiz.get_choices_for_snippet(snippet)
+        assert len(choices) == 4
+
+    def test_choices_returns_all_when_fewer_than_4(self, request_with_session, db):
+        v1 = PythonVersion.objects.create(major=3, minor=6)
+        v2 = PythonVersion.objects.create(major=3, minor=8)
+        snippet = CodeSnippet.objects.create(
+            title="Test", code="x = 1", first_appearance=v1
+        )
+        quiz = QuizSession(request_with_session)
+        choices = quiz.get_choices_for_snippet(snippet)
+        assert len(choices) == 2
+        assert v1 in choices
+        assert v2 in choices
+
+    def test_choices_ordered_by_version(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        snippet = snippets[0]
+        choices = quiz.get_choices_for_snippet(snippet)
+        version_tuples = [(v.major, v.minor) for v in choices]
+        assert version_tuples == sorted(version_tuples)

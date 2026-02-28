@@ -62,6 +62,7 @@ class TestQuestionView:
         assert response.status_code == 200
         assert "snippet" in response.context
         assert "versions" in response.context
+        assert len(response.context["versions"]) <= 4
 
     def test_question_redirects_to_start_without_session(self, client):
         response = client.get("/quiz/question/")

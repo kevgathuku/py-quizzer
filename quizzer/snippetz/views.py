@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 
-from quizzer.snippetz.models import CodeSnippet, PythonVersion
+from quizzer.snippetz.models import CodeSnippet
 from quizzer.snippetz.services import QuizSession
 
 
@@ -33,7 +33,7 @@ def question(request):
             return redirect("quiz:question")
 
     snippet = quiz.get_current_snippet()
-    versions = PythonVersion.objects.all()
+    versions = quiz.get_choices_for_snippet(snippet)
     question_ids = quiz._get_data()["question_ids"]
     answers = quiz._get_data()["answers"]
     question_number = len(answers) + 1
