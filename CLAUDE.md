@@ -16,19 +16,23 @@ Django web application — a Python Version Quiz that displays code snippets and
 ## Commands
 
 ```bash
-# Development
-python manage.py runserver
-python manage.py makemigrations
-python manage.py migrate
+# All commands use uv as the Python tooling interface
+uv run python manage.py runserver
+uv run python manage.py makemigrations
+uv run python manage.py migrate
 
 # Testing (TDD is mandatory)
-pytest
-pytest --cov=quizzer --cov-fail-under=80
-pytest quizzer/snippetz/tests/test_models.py        # single test file
-pytest -k test_name                                  # single test
+uv run pytest
+uv run pytest --cov=quizzer --cov-fail-under=80
+uv run pytest quizzer/snippetz/tests/test_models.py  # single test file
+uv run pytest -k test_name                            # single test
+
+# Dependencies
+uv add <package>                                      # add production dep
+uv add --dev <package>                                # add dev dep
 
 # Data seeding (idempotent)
-python manage.py seed_quiz
+uv run python manage.py seed_quiz
 
 # Environment
 # direnv auto-activates .venv via .envrc
@@ -39,7 +43,10 @@ python manage.py seed_quiz
 **MVT with service layer** — all business logic lives in `services.py`, views are thin wrappers.
 
 - `quizzer/` — Django project config (settings, urls, wsgi)
-- `quizzer/snippetz/` — Main app: models, views, services, admin, management commands
+- `quizzer/snippetz/` — Main app (registered as `quizzer.snippetz` in INSTALLED_APPS)
+  - models, views, services, forms, admin, management commands
+  - `tests/` — test package with `test_models.py`, `test_services.py`, `test_views.py`, `test_integration.py`
+  - `templates/snippetz/` — Django templates
 
 ### Key Models
 
@@ -57,12 +64,13 @@ Minimal deterministic state stored in Django sessions:
 
 `QuizSession` wrapper class handles: `start()`, `get_current_snippet()`, `submit_answer()`, `is_finished()`, `calculate_score()`, `reset()`. No business logic in views or templates.
 
-### Routes
+### Routes (URL namespace: `quiz:`)
 
-- `GET /quiz/start/` — start a new quiz
-- `GET /quiz/question/` — display current question
-- `POST /quiz/question/` — submit answer
-- `GET /quiz/results/` — show results
+- `GET /quiz/start/` (`quiz:start`) — start a new quiz
+- `GET /quiz/question/` (`quiz:question`) — display current question
+- `POST /quiz/question/` (`quiz:question`) — submit answer
+- `GET /quiz/results/` (`quiz:results`) — show results
+- `GET /` — redirects to `/quiz/start/`
 
 ## Design Constraints
 
@@ -79,11 +87,5 @@ Models → Services → Views → Integration (full quiz flow)
 ## Specs
 
 - `docs/specfiication_v0.md` — detailed Django specification
-- `specs/001-python-version-quiz/` — feature specification
-
-## Active Technologies
-- Python 3.12+ / Django 6.0+ + Django, Gunicorn, WhiteNoise (001-python-version-quiz)
-- SQLite (all environments) (001-python-version-quiz)
-
-## Recent Changes
-- 001-python-version-quiz: Added Python 3.12+ / Django 6.0+ + Django, Gunicorn, WhiteNoise
+- `specs/001-python-version-quiz/` — feature spec, plan, tasks, data model, contracts
+- `.specify/memory/constitution.md` — project constitution (6 core principles)
