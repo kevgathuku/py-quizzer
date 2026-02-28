@@ -90,15 +90,15 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T023 [P] [US2] Write QuizSession results service tests in quizzer/snippetz/tests/test_services.py: calculate_score() returns correct count, calculate_score() returns per-question breakdown with is_correct flags, reset() clears session state
-- [ ] T024 [P] [US2] Write view tests for results endpoint in quizzer/snippetz/tests/test_views.py: GET /quiz/results/ renders results.html with score and breakdown, GET /quiz/results/ redirects to question if quiz not finished, GET /quiz/results/ redirects to start if no active quiz, restart via GET /quiz/start/ clears previous session
+- [x] T023 [P] [US2] Write QuizSession results service tests in quizzer/snippetz/tests/test_services.py: calculate_score() returns correct count, calculate_score() returns per-question breakdown with is_correct flags, reset() clears session state
+- [x] T024 [P] [US2] Write view tests for results endpoint in quizzer/snippetz/tests/test_views.py: GET /quiz/results/ renders results.html with score and breakdown, GET /quiz/results/ redirects to question if quiz not finished, GET /quiz/results/ redirects to start if no active quiz, restart via GET /quiz/start/ clears previous session
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Add calculate_score() and reset() methods to QuizSession in quizzer/snippetz/services.py: score count, per-question breakdown (snippet, user_answer, correct_answer, is_correct), reset clears quiz session data
-- [ ] T026 [US2] Implement results view in quizzer/snippetz/views.py: delegates to calculate_score(), renders results.html, redirects if quiz not finished or no active quiz
-- [ ] T027 [US2] Create results.html template in quizzer/snippetz/templates/snippetz/results.html: total score, per-question breakdown with snippet title, user's answer, correct answer, right/wrong indicator, explanation
-- [ ] T028 [US2] Add results URL to quizzer/snippetz/urls.py: quiz/results/
+- [x] T025 [US2] Add calculate_score() and reset() methods to QuizSession in quizzer/snippetz/services.py: score count, per-question breakdown (snippet, user_answer, correct_answer, is_correct), reset clears quiz session data
+- [x] T026 [US2] Implement results view in quizzer/snippetz/views.py: delegates to calculate_score(), renders results.html, redirects if quiz not finished or no active quiz
+- [x] T027 [US2] Create results.html template in quizzer/snippetz/templates/snippetz/results.html: total score, per-question breakdown with snippet title, user's answer, correct answer, right/wrong indicator, explanation
+- [x] T028 [US2] Add results URL to quizzer/snippetz/urls.py: quiz/results/
 
 **Checkpoint**: Full quiz flow works end-to-end: start → answer all → see results with breakdown → restart. All US1 + US2 tests pass.
 
@@ -114,13 +114,13 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T029 [P] [US3] Write admin tests in quizzer/snippetz/tests/test_admin.py: admin registers PythonVersion and CodeSnippet, snippet admin uses monospace textarea for code field, admin rejects snippet with invalid syntax
-- [ ] T030 [P] [US3] Write seed_quiz management command tests in quizzer/snippetz/tests/test_commands.py: seed creates at least 9 PythonVersions and 10 CodeSnippets, seed is idempotent (running twice creates no duplicates)
+- [x] T029 [P] [US3] Write admin tests in quizzer/snippetz/tests/test_admin.py: admin registers PythonVersion and CodeSnippet, snippet admin uses monospace textarea for code field, admin rejects snippet with invalid syntax
+- [x] T030 [P] [US3] Write seed_quiz management command tests in quizzer/snippetz/tests/test_commands.py: seed creates at least 9 PythonVersions and 10 CodeSnippets, seed is idempotent (running twice creates no duplicates)
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Implement admin configuration in quizzer/snippetz/admin.py: PythonVersion admin with list_display (major, minor), CodeSnippet admin with list_display (title, first_appearance, created_at), monospace textarea widget for code field, syntax validation on save
-- [ ] T032 [US3] Create seed_quiz management command in quizzer/snippetz/management/commands/seed_quiz.py: create Python versions (at least 2.0 through 3.12+), create at least 10 realistic code snippets with correct first_appearance versions, use get_or_create for idempotency
+- [x] T031 [US3] Implement admin configuration in quizzer/snippetz/admin.py: PythonVersion admin with list_display (major, minor), CodeSnippet admin with list_display (title, first_appearance, created_at), monospace textarea widget for code field, syntax validation on save
+- [x] T032 [US3] Create seed_quiz management command in quizzer/snippetz/management/commands/seed_quiz.py: create Python versions (at least 2.0 through 3.12+), create at least 10 realistic code snippets with correct first_appearance versions, use get_or_create for idempotency
 
 **Checkpoint**: Admin interface fully functional. Seed command populates data idempotently. All US3 tests pass.
 
@@ -130,9 +130,9 @@
 
 **Purpose**: Integration testing, production readiness, coverage verification
 
-- [ ] T033 Write full flow integration test in quizzer/snippetz/tests/test_integration.py: start quiz → answer all questions → verify correct score on results → restart → verify fresh quiz
-- [ ] T034 Verify test coverage meets 80% threshold by running `pytest --cov=quizzer --cov-fail-under=80`
-- [ ] T035 Run quickstart.md validation: fresh migrate, seed_quiz, runserver, complete a quiz end-to-end
+- [x] T033 Write full flow integration test in quizzer/snippetz/tests/test_integration.py: start quiz → answer all questions → verify correct score on results → restart → verify fresh quiz
+- [x] T034 Verify test coverage meets 80% threshold by running `pytest --cov=quizzer --cov-fail-under=80`
+- [x] T035 Run quickstart.md validation: fresh migrate, seed_quiz, runserver, complete a quiz end-to-end
 
 ---
 
