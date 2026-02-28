@@ -129,3 +129,52 @@ class TestQuizSessionProgression:
         for qid in question_ids:
             quiz.submit_answer(qid, snippets[0].first_appearance_id)
         assert quiz.is_finished() is True
+
+
+@pytest.mark.django_db
+class TestQuizSessionResults:
+    def _answer_all(self, quiz, request_with_session, snippets):
+        """Answer all questions with correct answers."""
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+        snippet_map = {s.pk: s for s in snippets}
+        for qid in question_ids:
+            snippet = snippet_map[qid]
+            quiz.submit_answer(qid, snippet.first_appearance_id)
+
+    def test_calculate_score_correct_count(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        self._answer_all(quiz, request_with_session, snippets)
+        result = quiz.calculate_score()
+        assert result["score"] == result["total"]
+
+    def test_calculate_score_with_wrong_answers(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+        wrong_version = PythonVersion.objects.create(major=1, minor=0)
+        for qid in question_ids:
+            quiz.submit_answer(qid, wrong_version.pk)
+        result = quiz.calculate_score()
+        assert result["score"] == 0
+        assert result["total"] == len(question_ids)
+
+    def test_calculate_score_breakdown_has_is_correct(
+        self, request_with_session, snippets
+    ):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        self._answer_all(quiz, request_with_session, snippets)
+        result = quiz.calculate_score()
+        assert len(result["breakdown"]) == result["total"]
+        for item in result["breakdown"]:
+            assert "is_correct" in item
+            assert "snippet" in item
+            assert "user_answer" in item
+            assert "correct_answer" in item
+
+    def test_reset_clears_session(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        quiz.reset()
+        assert request_with_session.session.get("quiz") is None
