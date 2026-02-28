@@ -71,7 +71,11 @@ class QuizSession:
                 }
             )
 
-        return {"score": score, "total": len(data["question_ids"]), "breakdown": breakdown}
+        return {
+            "score": score,
+            "total": len(data["question_ids"]),
+            "breakdown": breakdown,
+        }
 
     def get_choices_for_snippet(self, snippet, num_choices=4):
         correct = snippet.first_appearance
@@ -80,9 +84,7 @@ class QuizSession:
                 : num_choices - 1
             ]
         )
-        choices = [correct] + others
-        choices.sort(key=lambda v: (v.major, v.minor))
-        return choices
+        return sorted([correct] + others, key=lambda v: (v.major, v.minor))
 
     def reset(self):
         if "quiz" in self.session:

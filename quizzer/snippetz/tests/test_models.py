@@ -7,13 +7,10 @@ from quizzer.snippetz.models import CodeSnippet, PythonVersion
 
 @pytest.mark.django_db
 class TestPythonVersion:
-    def test_create_version(self):
+    def test_valid_version(self):
         version = PythonVersion.objects.create(major=3, minor=10)
         assert version.major == 3
         assert version.minor == 10
-
-    def test_str_representation(self):
-        version = PythonVersion.objects.create(major=3, minor=10)
         assert str(version) == "3.10"
 
     def test_ordering_semantic(self):

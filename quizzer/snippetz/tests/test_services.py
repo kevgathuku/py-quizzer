@@ -17,25 +17,14 @@ def versions(db):
 
 @pytest.fixture
 def snippets(versions):
-    result = []
-    for i, version in enumerate(versions):
-        result.append(
-            CodeSnippet.objects.create(
-                title=f"Snippet {i + 1}",
-                code=f"x = {i + 1}",
-                first_appearance=version,
-            )
+    return [
+        CodeSnippet.objects.create(
+            title=f"Snippet {i + 1}",
+            code=f"{'x' if i < 4 else 'y'} = {i + 1}",
+            first_appearance=versions[i % len(versions)],
         )
-    # Add extras so we have more than 5
-    for i in range(4, 8):
-        result.append(
-            CodeSnippet.objects.create(
-                title=f"Snippet {i + 1}",
-                code=f"y = {i + 1}",
-                first_appearance=versions[i % len(versions)],
-            )
-        )
-    return result
+        for i in range(8)
+    ]
 
 
 @pytest.fixture

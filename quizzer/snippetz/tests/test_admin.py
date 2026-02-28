@@ -7,14 +7,10 @@ from quizzer.snippetz.models import CodeSnippet, PythonVersion
 
 @pytest.mark.django_db
 class TestAdmin:
-    def test_python_version_registered(self):
+    def test_models_registered(self):
         from django.contrib.admin.sites import site
 
         assert PythonVersion in site._registry
-
-    def test_code_snippet_registered(self):
-        from django.contrib.admin.sites import site
-
         assert CodeSnippet in site._registry
 
     def test_snippet_admin_uses_monospace_textarea(self):
