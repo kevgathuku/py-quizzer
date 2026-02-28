@@ -13,6 +13,7 @@ DJANGO_SETTINGS_MODULE = "quizzer.settings"
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+addopts = "--cov=quizzer --cov-report=term --cov-report=xml"
 
 [dependency-groups]
 dev = [
