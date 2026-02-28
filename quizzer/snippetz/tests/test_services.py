@@ -87,13 +87,13 @@ class TestQuizSessionProgression:
         quiz.start()
         question_ids = request_with_session.session["quiz"]["question_ids"]
         snippet_id = question_ids[0]
-        version_id = snippets[0].first_appearance_id
+        user_choice = snippets[0].first_appearance_id
 
-        quiz.submit_answer(snippet_id, version_id)
+        quiz.submit_answer(snippet_id, user_choice)
 
         answers = request_with_session.session["quiz"]["answers"]
         assert str(snippet_id) in answers
-        assert answers[str(snippet_id)] == version_id
+        assert answers[str(snippet_id)] == user_choice
 
     def test_current_advances_after_answer(self, request_with_session, snippets):
         quiz = QuizSession(request_with_session)

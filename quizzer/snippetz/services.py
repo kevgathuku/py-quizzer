@@ -30,11 +30,11 @@ class QuizSession:
                 )
         return None
 
-    def submit_answer(self, snippet_id, version_id):
+    def submit_answer(self, snippet_id, user_choice):
         data = self._get_data()
         if not data:
             return
-        data["answers"][str(snippet_id)] = version_id
+        data["answers"][str(snippet_id)] = user_choice
         self.session.modified = True
 
     def is_finished(self):

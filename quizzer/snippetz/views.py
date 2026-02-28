@@ -23,11 +23,11 @@ def question(request):
         return redirect("quiz:results")
 
     if request.method == "POST":
-        version_id = request.POST.get("version_id")
-        if version_id:
+        user_choice = request.POST.get("version_id")
+        if user_choice:
             snippet = quiz.get_current_snippet()
             if snippet:
-                quiz.submit_answer(snippet.pk, int(version_id))
+                quiz.submit_answer(snippet.pk, int(user_choice))
             if quiz.is_finished():
                 return redirect("quiz:results")
             return redirect("quiz:question")
