@@ -207,9 +207,7 @@ class TestQuizSessionChoices:
         )
         quiz = QuizSession(request_with_session)
         choices = quiz.get_choices_for_snippet(snippet)
-        assert len(choices) == 2
-        assert v1 in choices
-        assert v2 in choices
+        assert choices == [v1, v2]
 
     def test_choices_ordered_by_version(self, request_with_session, snippets):
         quiz = QuizSession(request_with_session)
