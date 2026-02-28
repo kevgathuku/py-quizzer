@@ -43,7 +43,7 @@ python manage.py seed_quiz
 
 ### Key Models
 
-- **LanguageVersion** — `major`/`minor` fields, semantic ordering, `unique_together`
+- **PythonVersion** — `major`/`minor` fields, semantic ordering, `unique_together`
 - **CodeSnippet** — `title`, `code` (syntax-validated via `ast.parse`), `first_appearance` FK (PROTECT), `explanation`
 
 ### Session Design
@@ -80,3 +80,10 @@ Models → Services → Views → Integration (full quiz flow)
 
 - `docs/specfiication_v0.md` — detailed Django specification
 - `specs/001-python-version-quiz/` — feature specification
+
+## Active Technologies
+- Python 3.12+ / Django 6.0+ + Django, Gunicorn, WhiteNoise (001-python-version-quiz)
+- SQLite (all environments) (001-python-version-quiz)
+
+## Recent Changes
+- 001-python-version-quiz: Added Python 3.12+ / Django 6.0+ + Django, Gunicorn, WhiteNoise

@@ -1,104 +1,89 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Python Version Quiz
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
+**Branch**: `001-python-version-quiz` | **Date**: 2026-02-28 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/001-python-version-quiz/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Build a Django web application that presents Python code snippets and asks anonymous users to identify the earliest Python version supporting each snippet. The application uses server-rendered templates, Django sessions for state, a service layer for all business logic, and SQLite throughout. TDD is mandatory with 80%+ coverage.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: Python 3.12+ / Django 6.0+
+**Primary Dependencies**: Django, Gunicorn, WhiteNoise
+**Storage**: SQLite (all environments)
+**Testing**: pytest + pytest-django, coverage >= 80%
+**Target Platform**: Linux VPS
+**Project Type**: Web service (server-rendered, no SPA)
+**Performance Goals**: Pages load in under 1 second for modest concurrent users
+**Constraints**: No DRF, no SPA, no heavy JS, no login for quiz-takers
+**Scale/Scope**: Modest traffic, 2 models, 4 pages, 1 admin interface, 1 management command
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+| Principle | Status | Evidence |
+|-----------|--------|----------|
+| I. Test-First | PASS | TDD order specified: Models → Services → Views → Integration. Coverage target 80%+ (SC-006) |
+| II. Thin Views, Fat Services | PASS | QuizSession service class handles all business logic. Views delegate to services |
+| III. Deterministic State | PASS | Session stores only question_ids and answers dict. Score, current question, finished state all derived (FR-004) |
+| IV. Strong Model Validation | PASS | ast.parse syntax validation on CodeSnippet, PROTECT on FK, unique_together on PythonVersion (FR-005, FR-006, FR-009) |
+| V. Simplicity & Restraint | PASS | No login, no API, no SPA, no heavy JS, no leaderboards, no timers. Explicit out-of-scope list |
+| VI. Production Readiness | PASS | Gunicorn + WhiteNoise, env-based config, idempotent seed command, SQLite in all environments (SC-007) |
+
+**Gate result**: PASS — no violations, no complexity tracking needed.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/001-python-version-quiz/
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output
+│   └── routes.md        # URL contract
+└── tasks.md             # Phase 2 output (/speckit.tasks command)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+quizzer/                          # Django project config
+├── settings.py
+├── urls.py
+├── wsgi.py
+└── snippetz/                     # Main Django app
+    ├── models.py                 # PythonVersion, CodeSnippet
+    ├── services.py               # QuizSession wrapper
+    ├── views.py                  # Thin views delegating to services
+    ├── urls.py                   # App URL patterns
+    ├── forms.py                  # Answer submission form
+    ├── admin.py                  # Admin with monospace textarea
+    ├── apps.py                   # App config
+    ├── templates/
+    │   └── snippetz/
+    │       ├── start.html        # Quiz start page
+    │       ├── question.html     # Question display + answer form
+    │       ├── results.html      # Score + per-question breakdown
+    │       └── no_snippets.html  # Empty database message
+    ├── management/
+    │   └── commands/
+    │       └── seed_quiz.py      # Idempotent seed command
+    ├── migrations/
+    └── tests/
+        ├── __init__.py
+        ├── test_models.py        # Model tests
+        ├── test_services.py      # Service layer tests
+        ├── test_views.py         # View tests
+        └── test_integration.py   # Full flow integration tests
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Standard Django project layout. Single app (`snippetz`) nested under the project config directory (`quizzer/`). This matches the existing skeleton already generated. No frontend/backend split needed — server-rendered templates only.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+> No violations — table not needed.
