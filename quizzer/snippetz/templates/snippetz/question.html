@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question {{ question_number }} of {{ total_questions }} - Python Version Quiz</title>
+</head>
+<body>
+    <h1>Question {{ question_number }} of {{ total_questions }}</h1>
+    <h2>{{ snippet.title }}</h2>
+    <pre><code>{{ snippet.code }}</code></pre>
+    <p>Which Python version first introduced this feature?</p>
+    <form method="post">
+        {% csrf_token %}
+        {% for version in versions %}
+        <div>
+            <label>
+                <input type="radio" name="version_id" value="{{ version.pk }}" required>
+                Python {{ version }}
+            </label>
+        </div>
+        {% endfor %}
+        <button type="submit">Submit Answer</button>
+    </form>
+</body>
+</html>

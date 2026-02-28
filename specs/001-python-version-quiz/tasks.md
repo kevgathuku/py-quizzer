@@ -17,12 +17,12 @@
 
 **Purpose**: Project initialization, dependencies, and test configuration
 
-- [ ] T001 Register snippetz app in INSTALLED_APPS in quizzer/settings.py
-- [ ] T002 Install and configure pytest + pytest-django + pytest-cov in pyproject.toml
-- [ ] T003 Create pytest configuration (pytest.ini or pyproject.toml [tool.pytest]) with DJANGO_SETTINGS_MODULE
-- [ ] T004 Create test package structure at quizzer/snippetz/tests/__init__.py
-- [ ] T005 Configure WhiteNoise middleware in quizzer/settings.py
-- [ ] T006 Configure environment-based settings (SECRET_KEY, DEBUG, ALLOWED_HOSTS) in quizzer/settings.py
+- [x] T001 Register snippetz app in INSTALLED_APPS in quizzer/settings.py
+- [x] T002 Install and configure pytest + pytest-django + pytest-cov in pyproject.toml
+- [x] T003 Create pytest configuration (pytest.ini or pyproject.toml [tool.pytest]) with DJANGO_SETTINGS_MODULE
+- [x] T004 Create test package structure at quizzer/snippetz/tests/__init__.py
+- [x] T005 Configure WhiteNoise middleware in quizzer/settings.py
+- [x] T006 Configure environment-based settings (SECRET_KEY, DEBUG, ALLOWED_HOSTS) in quizzer/settings.py
 
 **Checkpoint**: Project runs, pytest discovers tests, `python manage.py check` passes
 
@@ -38,14 +38,14 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T007 [P] Write PythonVersion model tests in quizzer/snippetz/tests/test_models.py: version creation, ordering (3.9 before 3.10), unique constraint, __str__ output
-- [ ] T008 [P] Write CodeSnippet model tests in quizzer/snippetz/tests/test_models.py: creation with valid syntax, syntax validation rejects invalid code, PROTECT prevents version deletion, line ending normalization, indentation preservation
+- [x] T007 [P] Write PythonVersion model tests in quizzer/snippetz/tests/test_models.py: version creation, ordering (3.9 before 3.10), unique constraint, __str__ output
+- [x] T008 [P] Write CodeSnippet model tests in quizzer/snippetz/tests/test_models.py: creation with valid syntax, syntax validation rejects invalid code, PROTECT prevents version deletion, line ending normalization, indentation preservation
 
 ### Implementation for Foundational
 
-- [ ] T009 Implement PythonVersion model in quizzer/snippetz/models.py: major/minor fields, unique_together, ordering, __str__
-- [ ] T010 Implement CodeSnippet model in quizzer/snippetz/models.py: title, code, first_appearance FK (PROTECT), explanation, created_at, clean() with ast.parse, save() with line ending normalization
-- [ ] T011 Generate and run migrations with `python manage.py makemigrations snippetz && python manage.py migrate`
+- [x] T009 Implement PythonVersion model in quizzer/snippetz/models.py: major/minor fields, unique_together, ordering, __str__
+- [x] T010 Implement CodeSnippet model in quizzer/snippetz/models.py: title, code, first_appearance FK (PROTECT), explanation, created_at, clean() with ast.parse, save() with line ending normalization
+- [x] T011 Generate and run migrations with `python manage.py makemigrations snippetz && python manage.py migrate`
 
 **Checkpoint**: All model tests pass. `python manage.py migrate` runs cleanly.
 
@@ -61,20 +61,20 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T012 [P] [US1] Write QuizSession service tests in quizzer/snippetz/tests/test_services.py: start() creates session with question_ids and empty answers, get_current_snippet() returns first unanswered, submit_answer() stores answer correctly, is_finished() returns False when questions remain, question progression (current advances after answer)
-- [ ] T013 [P] [US1] Write view tests for start and question endpoints in quizzer/snippetz/tests/test_views.py: GET /quiz/start/ redirects to /quiz/question/, GET /quiz/question/ renders question.html with snippet and versions, POST /quiz/question/ records answer and redirects, start with no snippets renders no_snippets.html, start with fewer than 5 snippets uses all available
+- [x] T012 [P] [US1] Write QuizSession service tests in quizzer/snippetz/tests/test_services.py: start() creates session with question_ids and empty answers, get_current_snippet() returns first unanswered, submit_answer() stores answer correctly, is_finished() returns False when questions remain, question progression (current advances after answer)
+- [x] T013 [P] [US1] Write view tests for start and question endpoints in quizzer/snippetz/tests/test_views.py: GET /quiz/start/ redirects to /quiz/question/, GET /quiz/question/ renders question.html with snippet and versions, POST /quiz/question/ records answer and redirects, start with no snippets renders no_snippets.html, start with fewer than 5 snippets uses all available
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement QuizSession service in quizzer/snippetz/services.py: __init__(request), start(num_questions=5) with random selection, get_current_snippet() deriving current from session state, submit_answer(snippet_id, version_id), is_finished()
-- [ ] T015 [US1] Create answer submission form in quizzer/snippetz/forms.py: version_id field validation
-- [ ] T016 [US1] Implement start_quiz view in quizzer/snippetz/views.py: delegates to QuizSession.start(), handles no-snippets edge case, redirects to question
-- [ ] T017 [US1] Implement question view (GET + POST) in quizzer/snippetz/views.py: GET renders snippet with version choices using select_related, POST delegates to submit_answer and redirects
-- [ ] T018 [P] [US1] Create start.html template in quizzer/snippetz/templates/snippetz/start.html
-- [ ] T019 [P] [US1] Create question.html template in quizzer/snippetz/templates/snippetz/question.html: display code in `<pre><code>`, version radio buttons, question number/total
-- [ ] T020 [P] [US1] Create no_snippets.html template in quizzer/snippetz/templates/snippetz/no_snippets.html
-- [ ] T021 [US1] Create app URL configuration in quizzer/snippetz/urls.py: quiz/start/, quiz/question/
-- [ ] T022 [US1] Wire app URLs into project URL configuration in quizzer/urls.py: include snippetz.urls, add root redirect to /quiz/start/
+- [x] T014 [US1] Implement QuizSession service in quizzer/snippetz/services.py: __init__(request), start(num_questions=5) with random selection, get_current_snippet() deriving current from session state, submit_answer(snippet_id, version_id), is_finished()
+- [x] T015 [US1] Create answer submission form in quizzer/snippetz/forms.py: version_id field validation
+- [x] T016 [US1] Implement start_quiz view in quizzer/snippetz/views.py: delegates to QuizSession.start(), handles no-snippets edge case, redirects to question
+- [x] T017 [US1] Implement question view (GET + POST) in quizzer/snippetz/views.py: GET renders snippet with version choices using select_related, POST delegates to submit_answer and redirects
+- [x] T018 [P] [US1] Create start.html template in quizzer/snippetz/templates/snippetz/start.html
+- [x] T019 [P] [US1] Create question.html template in quizzer/snippetz/templates/snippetz/question.html: display code in `<pre><code>`, version radio buttons, question number/total
+- [x] T020 [P] [US1] Create no_snippets.html template in quizzer/snippetz/templates/snippetz/no_snippets.html
+- [x] T021 [US1] Create app URL configuration in quizzer/snippetz/urls.py: quiz/start/, quiz/question/
+- [x] T022 [US1] Wire app URLs into project URL configuration in quizzer/urls.py: include snippetz.urls, add root redirect to /quiz/start/
 
 **Checkpoint**: User can start a quiz, see questions one at a time, and answer all 5. All US1 tests pass.
 

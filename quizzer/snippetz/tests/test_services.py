@@ -1,0 +1,131 @@
+import pytest
+from django.test import RequestFactory
+
+from quizzer.snippetz.models import CodeSnippet, PythonVersion
+from quizzer.snippetz.services import QuizSession
+
+
+@pytest.fixture
+def versions(db):
+    return [
+        PythonVersion.objects.create(major=2, minor=7),
+        PythonVersion.objects.create(major=3, minor=6),
+        PythonVersion.objects.create(major=3, minor=8),
+        PythonVersion.objects.create(major=3, minor=10),
+    ]
+
+
+@pytest.fixture
+def snippets(versions):
+    result = []
+    for i, version in enumerate(versions):
+        result.append(
+            CodeSnippet.objects.create(
+                title=f"Snippet {i + 1}",
+                code=f"x = {i + 1}",
+                first_appearance=version,
+            )
+        )
+    # Add extras so we have more than 5
+    for i in range(4, 8):
+        result.append(
+            CodeSnippet.objects.create(
+                title=f"Snippet {i + 1}",
+                code=f"y = {i + 1}",
+                first_appearance=versions[i % len(versions)],
+            )
+        )
+    return result
+
+
+@pytest.fixture
+def request_with_session():
+    factory = RequestFactory()
+    request = factory.get("/")
+    from django.contrib.sessions.backends.db import SessionStore
+
+    request.session = SessionStore()
+    return request
+
+
+@pytest.mark.django_db
+class TestQuizSessionStart:
+    def test_start_creates_session_with_question_ids(
+        self, request_with_session, snippets
+    ):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        data = request_with_session.session.get("quiz")
+        assert data is not None
+        assert "question_ids" in data
+        assert len(data["question_ids"]) == 5
+
+    def test_start_creates_empty_answers(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        data = request_with_session.session["quiz"]
+        assert data["answers"] == {}
+
+    def test_start_with_fewer_than_default_snippets(
+        self, request_with_session, versions
+    ):
+        # Only 2 snippets exist
+        CodeSnippet.objects.create(
+            title="S1", code="a = 1", first_appearance=versions[0]
+        )
+        CodeSnippet.objects.create(
+            title="S2", code="b = 2", first_appearance=versions[1]
+        )
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        data = request_with_session.session["quiz"]
+        assert len(data["question_ids"]) == 2
+
+
+@pytest.mark.django_db
+class TestQuizSessionProgression:
+    def test_get_current_snippet_returns_first_unanswered(
+        self, request_with_session, snippets
+    ):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        first_id = request_with_session.session["quiz"]["question_ids"][0]
+        current = quiz.get_current_snippet()
+        assert current.pk == first_id
+
+    def test_submit_answer_stores_correctly(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+        snippet_id = question_ids[0]
+        version_id = snippets[0].first_appearance_id
+
+        quiz.submit_answer(snippet_id, version_id)
+
+        answers = request_with_session.session["quiz"]["answers"]
+        assert str(snippet_id) in answers
+        assert answers[str(snippet_id)] == version_id
+
+    def test_current_advances_after_answer(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+
+        quiz.submit_answer(question_ids[0], snippets[0].first_appearance_id)
+        current = quiz.get_current_snippet()
+        assert current.pk == question_ids[1]
+
+    def test_is_finished_false_when_questions_remain(
+        self, request_with_session, snippets
+    ):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        assert quiz.is_finished() is False
+
+    def test_is_finished_true_when_all_answered(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+        for qid in question_ids:
+            quiz.submit_answer(qid, snippets[0].first_appearance_id)
+        assert quiz.is_finished() is True
