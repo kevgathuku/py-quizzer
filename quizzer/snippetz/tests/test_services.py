@@ -48,11 +48,6 @@ class TestQuizSessionStart:
         assert data is not None
         assert "question_ids" in data
         assert len(data["question_ids"]) == 5
-
-    def test_start_creates_empty_answers(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        quiz.start()
-        data = request_with_session.session["quiz"]
         assert data["answers"] == {}
 
     def test_start_with_fewer_than_default_snippets(
@@ -176,9 +171,13 @@ class TestQuizSessionChoices:
     ):
         quiz = QuizSession(request_with_session)
         quiz.start()
-        snippet = snippets[0]
-        choices = quiz.get_choices_for_snippet(snippet)
-        assert snippet.first_appearance in choices
+        question_ids = request_with_session.session["quiz"]["question_ids"]
+        for snippet_id in question_ids:
+            snippet = CodeSnippet.objects.select_related("first_appearance").get(
+                pk=snippet_id
+            )
+            choices = quiz.get_choices_for_snippet(snippet)
+            assert snippet.first_appearance in choices
 
     def test_choices_limited_to_4(self, request_with_session, snippets, versions):
         # Ensure more than 4 versions exist
