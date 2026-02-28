@@ -34,7 +34,7 @@ After completing a quiz, the user sees their score (correct answers out of total
 
 **Acceptance Scenarios**:
 
-1. **Given** a completed quiz, **When** the user views results, **Then** the score is displayed as correct answers out of total (e.g., "3 out of 5")
+1. **Given** a completed quiz, **When** the user views results, **Then** the score is displayed as correct answers out of total (e.g., "3 out of 5") along with a per-question breakdown showing each snippet, the user's answer, the correct answer, and the explanation
 2. **Given** a completed quiz with results displayed, **When** the user chooses to restart, **Then** the session is cleared and a new random set of snippets is selected
 3. **Given** a user has not yet completed the quiz, **When** they try to access results, **Then** they are redirected back to the current question
 
@@ -60,11 +60,11 @@ An administrator manages the quiz content by adding, editing, and removing code 
 
 ### Edge Cases
 
-- What happens when there are fewer available snippets than the requested quiz size (e.g., fewer than 5 snippets in the database)?
-- What happens when a user's session expires mid-quiz?
-- What happens when a user submits an answer for a snippet they have already answered?
-- What happens when a user tries to start a quiz with no snippets in the database?
-- What happens when a code snippet contains indentation or special characters?
+- If fewer snippets are available than the requested quiz size, the system uses all available snippets
+- If no snippets exist in the database, the system displays a message indicating no quiz is available
+- If a user's session expires mid-quiz, the quiz starts fresh on next visit
+- If a user submits an answer for an already-answered snippet, the submission is ignored
+- Code snippets with indentation and special characters are preserved exactly as stored (covered by FR-007)
 
 ## Requirements *(mandatory)*
 
@@ -83,7 +83,7 @@ An administrator manages the quiz content by adding, editing, and removing code 
 - **FR-011**: System MUST provide an administrative interface for managing snippets and versions, with a monospace code editing area and syntax validation
 - **FR-012**: System MUST provide a bulk content seeding operation that is idempotent (safe to run multiple times without creating duplicates)
 - **FR-013**: System MUST default to 5 questions per quiz session
-- **FR-014**: System MUST display an explanation for each snippet (when available) on the results page so users can learn from their answers
+- **FR-014**: System MUST display a per-question breakdown on the results page showing each snippet's title, the user's selected version, the correct version, whether the answer was right or wrong, and the explanation (when available)
 
 ### Key Entities
 
@@ -103,8 +103,16 @@ An administrator manages the quiz content by adding, editing, and removing code 
 - **SC-007**: Application deploys and runs successfully on a standard server with no manual data manipulation required
 - **SC-008**: Application remains functional with zero maintenance for 18+ months after deployment
 
+## Clarifications
+
+### Session 2026-02-28
+
+- Q: Which database should be used in production? → A: SQLite throughout, including production
+- Q: What level of detail should the results page show? → A: Per-question breakdown — show each snippet with the user's answer, correct answer, and explanation
+
 ## Assumptions
 
+- The application uses a single-file embedded database in all environments (development and production) — no separate database server required
 - Users access the application through a standard web browser; no mobile-specific optimizations are required
 - A single administrator manages content; no multi-user admin workflows are needed
 - The quiz focuses on Python versions from approximately 2.0 through the latest 3.x release
