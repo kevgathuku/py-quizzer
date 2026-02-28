@@ -9,7 +9,7 @@ Django web application — a Python Version Quiz that displays code snippets and
 ## Tech Stack
 
 - Python 3.12+ / Django 6.0
-- SQLite (dev), PostgreSQL (production)
+- SQLite (all environments, including production)
 - pytest + pytest-django (testing, 80%+ coverage required)
 - Gunicorn + WhiteNoise (deployment)
 
