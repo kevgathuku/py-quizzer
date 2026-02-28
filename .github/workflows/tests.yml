@@ -23,11 +23,4 @@ jobs:
         run: uv sync --dev
 
       - name: Run pytest
-        run: uv run pytest --cov=quizzer --cov-fail-under=80
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: quizzer
+        run: uv run pytest --cov=quizzer --cov-report=term-missing --cov-fail-under=80
