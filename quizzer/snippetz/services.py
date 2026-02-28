@@ -102,10 +102,24 @@ class QuizSession:
         if not session_data:
             return []
 
-        choice_version_pks = session_data["choices"].get(str(snippet.pk), [])
+        choices_data = session_data.get("choices", {})
+        choice_version_pks = choices_data.get(str(snippet.pk))
+
+        if choice_version_pks is None:
+            return self._generate_choices_for_snippet(snippet)
+
         versions = PythonVersion.objects.in_bulk()
         choices = [versions[pk] for pk in choice_version_pks if pk in versions]
         return sorted(choices, key=lambda v: (v.major, v.minor))
+
+    def _generate_choices_for_snippet(self, snippet):
+        correct = snippet.first_appearance
+        others = list(
+            PythonVersion.objects.exclude(pk=correct.pk).order_by("?")[
+                : self.NUM_CHOICES - 1
+            ]
+        )
+        return sorted([correct] + others, key=lambda v: (v.major, v.minor))
 
     def reset(self):
         if "quiz" in self.session:

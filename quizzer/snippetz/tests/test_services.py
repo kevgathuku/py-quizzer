@@ -217,3 +217,15 @@ class TestQuizSessionChoices:
         first_call = quiz.get_choices_for_snippet(snippet)
         second_call = quiz.get_choices_for_snippet(snippet)
         assert first_call == second_call
+
+    def test_get_choices_handles_missing_choices_key(
+        self, request_with_session, snippets
+    ):
+        request_with_session.session["quiz"] = {
+            "question_ids": [s.pk for s in snippets[:5]],
+            "answers": {},
+        }
+        quiz = QuizSession(request_with_session)
+        snippet = snippets[0]
+        choices = quiz.get_choices_for_snippet(snippet)
+        assert len(choices) > 0
