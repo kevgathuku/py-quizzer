@@ -175,16 +175,20 @@ class TestQuizSessionChoices:
         self, request_with_session, snippets
     ):
         quiz = QuizSession(request_with_session)
+        quiz.start()
         snippet = snippets[0]
         choices = quiz.get_choices_for_snippet(snippet)
         assert snippet.first_appearance in choices
 
     def test_choices_limited_to_4(self, request_with_session, snippets, versions):
         # Ensure more than 4 versions exist
-        PythonVersion.objects.create(major=3, minor=11)
-        PythonVersion.objects.create(major=3, minor=12)
+        v11 = PythonVersion.objects.create(major=3, minor=11)
+        v12 = PythonVersion.objects.create(major=3, minor=12)
         quiz = QuizSession(request_with_session)
-        snippet = snippets[0]
+        quiz.start()
+        # Get a snippet that's actually in the quiz
+        snippet_id = request_with_session.session["quiz"]["question_ids"][0]
+        snippet = CodeSnippet.objects.get(pk=snippet_id)
         choices = quiz.get_choices_for_snippet(snippet)
         assert len(choices) == 4
 
@@ -195,12 +199,22 @@ class TestQuizSessionChoices:
             title="Test", code="x = 1", first_appearance=v1
         )
         quiz = QuizSession(request_with_session)
+        quiz.start()
         choices = quiz.get_choices_for_snippet(snippet)
         assert choices == [v1, v2]
 
     def test_choices_ordered_by_version(self, request_with_session, snippets):
         quiz = QuizSession(request_with_session)
+        quiz.start()
         snippet = snippets[0]
         choices = quiz.get_choices_for_snippet(snippet)
         version_tuples = [(v.major, v.minor) for v in choices]
         assert version_tuples == sorted(version_tuples)
+
+    def test_choices_stable_across_calls(self, request_with_session, snippets):
+        quiz = QuizSession(request_with_session)
+        quiz.start()
+        snippet = snippets[0]
+        first_call = quiz.get_choices_for_snippet(snippet)
+        second_call = quiz.get_choices_for_snippet(snippet)
+        assert first_call == second_call

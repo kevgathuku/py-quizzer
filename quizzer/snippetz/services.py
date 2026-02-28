@@ -1,7 +1,11 @@
+import random
+
 from quizzer.snippetz.models import CodeSnippet, PythonVersion
 
 
 class QuizSession:
+    NUM_CHOICES = 4
+
     def __init__(self, request):
         self.session = request.session
 
@@ -14,9 +18,23 @@ class QuizSession:
                 :num_questions
             ]
         )
+        snippets = CodeSnippet.objects.select_related("first_appearance").in_bulk(ids)
+        all_versions = list(PythonVersion.objects.all())
+
+        choices = {}
+        for qid in ids:
+            snippet = snippets[qid]
+            correct = snippet.first_appearance
+            others = [v for v in all_versions if v.pk != correct.pk]
+            if len(others) >= self.NUM_CHOICES - 1:
+                others = random.sample(others, self.NUM_CHOICES - 1)
+            choice_pks = [correct.pk] + [v.pk for v in others]
+            choices[str(qid)] = choice_pks
+
         self.session["quiz"] = {
             "question_ids": ids,
             "answers": {},
+            "choices": choices,
         }
 
     def get_current_snippet(self):
@@ -77,14 +95,15 @@ class QuizSession:
             "breakdown": breakdown,
         }
 
-    def get_choices_for_snippet(self, snippet, num_choices=4):
-        correct = snippet.first_appearance
-        others = list(
-            PythonVersion.objects.exclude(pk=correct.pk).order_by("?")[
-                : num_choices - 1
-            ]
-        )
-        return sorted([correct] + others, key=lambda v: (v.major, v.minor))
+    def get_choices_for_snippet(self, snippet):
+        data = self._get_data()
+        if not data:
+            return []
+
+        choice_pks = data["choices"].get(str(snippet.pk), [])
+        versions = PythonVersion.objects.in_bulk()
+        choices = [versions[pk] for pk in choice_pks if pk in versions]
+        return sorted(choices, key=lambda v: (v.major, v.minor))
 
     def reset(self):
         if "quiz" in self.session:
