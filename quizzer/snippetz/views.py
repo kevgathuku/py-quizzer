@@ -26,7 +26,7 @@ def question(request):
         case Ok(state):
             pass
         case Err(e):
-            logger.warning("question: redirecting to start: %s", e)
+            logger.warning("question: unable to load state. redirecting to start: %s", e)
             return redirect("quiz:start")
 
     if state.is_finished():

@@ -1,9 +1,12 @@
+import logging
 import random
 from dataclasses import dataclass, replace
 
 from result import Err, Ok, Result
 
 from quizzer.snippetz.models import CodeSnippet, PythonVersion
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,7 @@ class QuizSession:
     def load(self) -> Result[QuizState, str]:
         data = self.session.get("quiz")
         if not data:
+            logger.debug("load: no quiz data in session")
             return Err("No active quiz")
         return Ok(
             QuizState(
@@ -106,9 +110,20 @@ class QuizSession:
         choice_version_pks = state.choices.get(str(snippet.pk))
 
         if choice_version_pks is None:
+            logger.warning(
+                "get_choices_for_snippet: no stored choices for snippet %d, sampling random",
+                snippet.pk,
+            )
             return self._sample_random_choices(snippet)
 
         versions = PythonVersion.objects.in_bulk()
+        missing = [pk for pk in choice_version_pks if pk not in versions]
+        if missing:
+            logger.warning(
+                "get_choices_for_snippet: version pks %s not found in db for snippet %d",
+                missing,
+                snippet.pk,
+            )
         choices = [versions[pk] for pk in choice_version_pks if pk in versions]
         return sorted(choices, key=lambda v: (v.major, v.minor))
 
@@ -133,6 +148,12 @@ class QuizSession:
             snippet = snippets[snippet_id]
             user_answer_id = state.answers.get(str(snippet_id))
             user_answer = versions.get(user_answer_id) if user_answer_id else None
+            if user_answer_id and not user_answer:
+                logger.warning(
+                    "calculate_score: answer_id %s for snippet %d not found in db",
+                    user_answer_id,
+                    snippet_id,
+                )
             is_correct = user_answer_id == snippet.first_appearance_id
             if is_correct:
                 score += 1
