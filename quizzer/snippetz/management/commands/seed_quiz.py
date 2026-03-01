@@ -11,6 +11,7 @@ VERSIONS = [
     (3, 3),
     (3, 5),
     (3, 6),
+    (3, 7),
     (3, 8),
     (3, 10),
 ]
@@ -75,6 +76,66 @@ SNIPPETS = [
         "code": "def square(number: int | float) -> int | float:\n    return number ** 2",
         "version": (3, 10),
         "explanation": "The | operator for union types was added in Python 3.10 (PEP 604).",
+    },
+    {
+        "title": "Print Function",
+        "code": "print('Hello', 'World', sep=', ', end='!\\n')",
+        "version": (3, 0),
+        "explanation": "print became a function (instead of a statement) in Python 3.0 (PEP 3105).",
+    },
+    {
+        "title": "Extended Iterable Unpacking",
+        "code": "first, *middle, last = [1, 2, 3, 4, 5]",
+        "version": (3, 0),
+        "explanation": "Extended iterable unpacking with * was added in Python 3.0 (PEP 3132).",
+    },
+    {
+        "title": "OrderedDict",
+        "code": "from collections import OrderedDict\n\nod = OrderedDict()\nod['first'] = 1\nod['second'] = 2",
+        "version": (3, 1),
+        "explanation": "collections.OrderedDict was added in Python 3.1.",
+    },
+    {
+        "title": "Argparse Module",
+        "code": "import argparse\n\nparser = argparse.ArgumentParser()\nparser.add_argument('--verbose', action='store_true')\nargs = parser.parse_args()",
+        "version": (3, 2),
+        "explanation": "argparse replaced optparse as the recommended CLI parser in Python 3.2.",
+    },
+    {
+        "title": "Concurrent Futures",
+        "code": "from concurrent.futures import ThreadPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=4) as pool:\n    results = pool.map(process, items)",
+        "version": (3, 2),
+        "explanation": "The concurrent.futures module was added in Python 3.2 (PEP 3148).",
+    },
+    {
+        "title": "Async/Await",
+        "code": "import asyncio\n\nasync def fetch_data(url):\n    await asyncio.sleep(1)\n    return 'data'",
+        "version": (3, 5),
+        "explanation": "async/await syntax was added in Python 3.5 (PEP 492).",
+    },
+    {
+        "title": "Type Hints",
+        "code": "def greeting(name: str) -> str:\n    return 'Hello ' + name",
+        "version": (3, 5),
+        "explanation": "Type hints were added in Python 3.5 (PEP 484).",
+    },
+    {
+        "title": "Underscores in Numeric Literals",
+        "code": "population = 7_900_000_000\nhex_addr = 0xFF_FF_FF_FF",
+        "version": (3, 6),
+        "explanation": "Underscores in numeric literals for readability were added in Python 3.6 (PEP 515).",
+    },
+    {
+        "title": "Data Classes",
+        "code": "from dataclasses import dataclass\n\n@dataclass\nclass Point:\n    x: float\n    y: float",
+        "version": (3, 7),
+        "explanation": "The dataclasses module was added in Python 3.7 (PEP 557).",
+    },
+    {
+        "title": "Dictionary Ordering Guaranteed",
+        "code": "d = {}\nd['first'] = 1\nd['second'] = 2\nassert list(d.keys()) == ['first', 'second']",
+        "version": (3, 7),
+        "explanation": "Dictionary insertion order was guaranteed by the language spec in Python 3.7.",
     },
 ]
 
