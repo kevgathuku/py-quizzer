@@ -1,6 +1,8 @@
 import random
 from dataclasses import dataclass, replace
 
+from result import Err, Ok, Result
+
 from quizzer.snippetz.models import CodeSnippet, PythonVersion
 
 
@@ -12,11 +14,11 @@ class QuizState:
     choices: dict[str, list[int]]
     answers: dict[str, int]
 
-    def next_unanswered_id(self) -> int | None:
+    def next_unanswered_id(self) -> Result[int, str]:
         for sid in self.question_ids:
             if str(sid) not in self.answers:
-                return sid
-        return None
+                return Ok(sid)
+        return Err("All questions answered")
 
     def is_finished(self) -> bool:
         return len(self.answers) == len(self.question_ids)
@@ -41,14 +43,16 @@ class QuizSession:
     def __init__(self, request):
         self.session = request.session
 
-    def load(self) -> QuizState | None:
+    def load(self) -> Result[QuizState, str]:
         data = self.session.get("quiz")
         if not data:
-            return None
-        return QuizState(
-            question_ids=tuple(data["question_ids"]),
-            choices=data["choices"],
-            answers=data["answers"],
+            return Err("No active quiz")
+        return Ok(
+            QuizState(
+                question_ids=tuple(data["question_ids"]),
+                choices=data["choices"],
+                answers=data["answers"],
+            )
         )
 
     def save(self, state: QuizState) -> None:
@@ -87,13 +91,16 @@ class QuizSession:
         self.save(state)
         return state
 
-    def fetch_next_snippet(self, state: QuizState) -> CodeSnippet | None:
-        snippet_id = state.next_unanswered_id()
-        if snippet_id is None:
-            return None
-        return CodeSnippet.objects.select_related("first_appearance").get(
-            pk=snippet_id
-        )
+    def fetch_next_snippet(self, state: QuizState) -> Result[CodeSnippet, str]:
+        match state.next_unanswered_id():
+            case Ok(snippet_id):
+                return Ok(
+                    CodeSnippet.objects.select_related("first_appearance").get(
+                        pk=snippet_id
+                    )
+                )
+            case Err() as err:
+                return err
 
     def get_choices_for_snippet(self, state: QuizState, snippet) -> list:
         choice_version_pks = state.choices.get(str(snippet.pk))

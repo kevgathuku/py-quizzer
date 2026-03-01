@@ -44,15 +44,17 @@ class TestQuizState:
             choices={"1": [10], "2": [10], "3": [10]},
             answers={"1": 10},
         )
-        assert state.next_unanswered_id() == 2
+        assert state.next_unanswered_id().ok() == 2
 
-    def test_next_unanswered_id_returns_none_when_all_answered(self):
+    def test_next_unanswered_id_returns_err_when_all_answered(self):
         state = QuizState(
             question_ids=(1, 2),
             choices={"1": [10], "2": [10]},
             answers={"1": 10, "2": 10},
         )
-        assert state.next_unanswered_id() is None
+        result = state.next_unanswered_id()
+        assert result.is_err()
+        assert result.err() == "All questions answered"
 
     def test_is_finished_false_when_questions_remain(self):
         state = QuizState(
@@ -136,8 +138,9 @@ class TestQuizSessionProgression:
     ):
         quiz = QuizSession(request_with_session)
         state = quiz.create_quiz()
-        current = quiz.fetch_next_snippet(state)
-        assert current.pk == state.question_ids[0]
+        result = quiz.fetch_next_snippet(state)
+        assert result.is_ok()
+        assert result.ok().pk == state.question_ids[0]
 
     def test_record_answer_stores_correctly(self, request_with_session, snippets):
         quiz = QuizSession(request_with_session)
@@ -148,7 +151,7 @@ class TestQuizSessionProgression:
         new_state = state.record_answer(snippet_id, user_choice)
         quiz.save(new_state)
 
-        loaded = quiz.load()
+        loaded = quiz.load().ok()
         assert str(snippet_id) in loaded.answers
         assert loaded.answers[str(snippet_id)] == user_choice
 
@@ -160,8 +163,8 @@ class TestQuizSessionProgression:
             state.question_ids[0], snippets[0].first_appearance_id
         )
         quiz.save(state)
-        state = quiz.load()
-        current = quiz.fetch_next_snippet(state)
+        state = quiz.load().ok()
+        current = quiz.fetch_next_snippet(state).ok()
         assert current.pk == state.question_ids[1]
 
     def test_is_finished_false_when_questions_remain(
@@ -223,7 +226,7 @@ class TestQuizSessionResults:
         quiz = QuizSession(request_with_session)
         quiz.create_quiz()
         quiz.reset()
-        assert quiz.load() is None
+        assert quiz.load().is_err()
 
 
 @pytest.mark.django_db
@@ -286,7 +289,7 @@ class TestQuizSessionChoices:
             "choices": {},
         }
         quiz = QuizSession(request_with_session)
-        state = quiz.load()
+        state = quiz.load().ok()
         snippet = snippets[0]
         choices = quiz.get_choices_for_snippet(state, snippet)
         assert len(choices) > 0
