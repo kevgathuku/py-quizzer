@@ -171,7 +171,3 @@ class QuizSession:
             "total": len(state.question_ids),
             "breakdown": breakdown,
         }
-
-    def reset(self):
-        if "quiz" in self.session:
-            del self.session["quiz"]

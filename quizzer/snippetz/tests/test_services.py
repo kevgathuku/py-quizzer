@@ -222,11 +222,6 @@ class TestQuizSessionResults:
             assert "user_answer" in item
             assert "correct_answer" in item
 
-    def test_reset_clears_session(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        quiz.create_quiz()
-        quiz.reset()
-        assert quiz.load().is_err()
 
 
 @pytest.mark.django_db
