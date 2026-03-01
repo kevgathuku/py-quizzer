@@ -203,6 +203,7 @@ dependencies = [
     { name = "django" },
     { name = "gunicorn" },
     { name = "psycopg2-binary" },
+    { name = "pygments" },
     { name = "whitenoise" },
 ]
 
@@ -219,6 +220,7 @@ requires-dist = [
     { name = "django", specifier = ">=6.0" },
     { name = "gunicorn" },
     { name = "psycopg2-binary", specifier = ">=2.9.0" },
+    { name = "pygments", specifier = ">=2.19.2" },
     { name = "whitenoise" },
 ]
 

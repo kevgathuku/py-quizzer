@@ -1,9 +1,12 @@
+{% load static %}
+{% load pygments_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Results - Python Version Quiz</title>
+    <link rel="stylesheet" href="{% static 'snippetz/pygments.css' %}">
 </head>
 <body>
     <h1>Quiz Results</h1>
@@ -13,7 +16,7 @@
     {% for item in breakdown %}
     <div style="margin-bottom: 1em; padding: 0.5em; border: 1px solid #ccc;">
         <h3>{{ item.snippet.title }} {% if item.is_correct %}&#10004;{% else %}&#10008;{% endif %}</h3>
-        <pre><code>{{ item.snippet.code }}</code></pre>
+        {{ item.snippet.code|pygmentize }}
         <p>Your answer: <strong>Python {{ item.user_answer }}</strong></p>
         <p>Correct answer: <strong>Python {{ item.correct_answer }}</strong></p>
         {% if item.snippet.explanation %}

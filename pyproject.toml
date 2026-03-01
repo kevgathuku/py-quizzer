@@ -8,6 +8,7 @@ dependencies = [
     "whitenoise",
     "dj-database-url>=2.0.0",
     "psycopg2-binary>=2.9.0",
+    "pygments>=2.19.2",
 ]
 
 [tool.pytest.ini_options]

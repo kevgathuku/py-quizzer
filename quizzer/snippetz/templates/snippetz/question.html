@@ -1,14 +1,17 @@
+{% load static %}
+{% load pygments_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Question {{ question_number }} of {{ total_questions }} - Python Version Quiz</title>
+    <link rel="stylesheet" href="{% static 'snippetz/pygments.css' %}">
 </head>
 <body>
     <h1>Question {{ question_number }} of {{ total_questions }}</h1>
     <h2>{{ snippet.title }}</h2>
-    <pre><code>{{ snippet.code }}</code></pre>
+    {{ snippet.code|pygmentize }}
     <p>Which Python version first introduced this feature?</p>
     <form method="post">
         {% csrf_token %}
