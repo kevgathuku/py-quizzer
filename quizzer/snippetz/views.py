@@ -1,9 +1,13 @@
+import logging
+
 from result import Err, Ok
 
 from django.shortcuts import redirect, render
 
 from quizzer.snippetz.models import CodeSnippet
 from quizzer.snippetz.services import QuizSession
+
+logger = logging.getLogger(__name__)
 
 
 def start_quiz(request):
@@ -21,7 +25,8 @@ def question(request):
     match quiz.load():
         case Ok(state):
             pass
-        case Err(_):
+        case Err(e):
+            logger.warning("question: redirecting to start: %s", e)
             return redirect("quiz:start")
 
     if state.is_finished():
@@ -34,8 +39,8 @@ def question(request):
                 case Ok(snippet):
                     state = state.record_answer(snippet.pk, int(answer_id))
                     quiz.save(state)
-                case Err(_):
-                    pass
+                case Err(e):
+                    logger.warning("question POST: could not fetch snippet: %s", e)
             if state.is_finished():
                 return redirect("quiz:results")
             return redirect("quiz:question")
@@ -61,7 +66,8 @@ def results(request):
     match quiz.load():
         case Ok(state):
             pass
-        case Err(_):
+        case Err(e):
+            logger.warning("results: redirecting to start: %s", e)
             return redirect("quiz:start")
 
     if not state.is_finished():
