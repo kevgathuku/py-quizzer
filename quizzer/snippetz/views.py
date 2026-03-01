@@ -23,7 +23,7 @@ def question(request):
         return redirect("quiz:results")
 
     if request.method == "POST":
-        user_choice = request.POST.get("version_id")
+        user_choice = request.POST.get("answer_id")
         if user_choice:
             snippet = quiz.get_current_snippet()
             if snippet:

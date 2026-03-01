@@ -34,7 +34,7 @@ class TestFullQuizFlow:
             # Answer with the correct version
             response = client.post(
                 "/quiz/question/",
-                {"version_id": snippet.first_appearance_id},
+                {"answer_id": snippet.first_appearance_id},
             )
             assert response.status_code == 302
 

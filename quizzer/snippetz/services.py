@@ -9,8 +9,8 @@ class QuizSession:
     Session structure:
         {
             "question_ids": [snippet_id, ...],  # ordered list of snippet PKs
-            "answers": {snippet_id: version_id, ...},  # user's answers
-            "choices": {snippet_id: [version_id, ...], ...},  # pre-generated choices
+            "answers": {snippet_id: answer_id, ...},  # user's answers
+            "choices": {snippet_id: [answer_id, ...], ...},  # pre-generated choices
         }
     """
 
@@ -108,9 +108,9 @@ class QuizSession:
 
         for snippet_id in session_data["question_ids"]:
             snippet = snippets[snippet_id]
-            user_version_id = session_data["answers"].get(str(snippet_id))
-            user_answer = versions.get(user_version_id) if user_version_id else None
-            is_correct = user_version_id == snippet.first_appearance_id
+            user_answer_id = session_data["answers"].get(str(snippet_id))
+            user_answer = versions.get(user_answer_id) if user_answer_id else None
+            is_correct = user_answer_id == snippet.first_appearance_id
             if is_correct:
                 score += 1
             breakdown.append(

@@ -75,7 +75,7 @@ class TestQuestionView:
 
         response = client.post(
             "/quiz/question/",
-            {"version_id": version.pk},
+            {"answer_id": version.pk},
         )
         assert response.status_code == 302
 
@@ -89,7 +89,7 @@ class TestResultsView:
         snippet_map = {s.pk: s for s in snippets}
         for qid in session["quiz"]["question_ids"]:
             version = snippet_map[qid].first_appearance
-            client.post("/quiz/question/", {"version_id": version.pk})
+            client.post("/quiz/question/", {"answer_id": version.pk})
 
     def test_results_renders_with_score(self, client, snippets):
         self._complete_quiz(client, snippets)
