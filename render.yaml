@@ -10,6 +10,7 @@ services:
     name: quizzer
     runtime: python
     buildCommand: './build.sh'
+    preDeployCommand: 'uv run python manage.py migrate && uv run python manage.py seed_quiz'
     startCommand: 'uv run gunicorn quizzer.wsgi:application'
     envVars:
       - key: DATABASE_URL
