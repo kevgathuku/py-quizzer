@@ -4,7 +4,7 @@ A Django web app that tests your knowledge of Python version history. You're sho
 
 ## Prerequisites
 
-- Python 3.12+
+- Python 3.14+
 - [uv](https://docs.astral.sh/uv/)
 
 ## Setup
@@ -98,7 +98,7 @@ Code snippets are validated with `ast.parse()` on save, so only valid Python syn
 uv run pytest
 
 # Run with coverage report
-uv run pytest --cov=quizzer.snippetz --cov-report=term-missing
+uv run pytest --cov=quizzer --cov-report=term-missing
 
 # Run a specific test file
 uv run pytest quizzer/snippetz/tests/test_models.py
@@ -106,7 +106,19 @@ uv run pytest quizzer/snippetz/tests/test_models.py
 
 ## Production
 
-The app uses SQLite and WhiteNoise for static files, so no external services are needed.
+The app uses WhiteNoise for static files. SQLite is the default database; set `DATABASE_URL` to use PostgreSQL or another backend.
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DJANGO_SECRET_KEY` | Yes (production) | insecure dev key | Secret key for cryptographic signing |
+| `DJANGO_DEBUG` | No | `True` | Set to `False` in production |
+| `DJANGO_ALLOWED_HOSTS` | No | `localhost,127.0.0.1` | Comma-separated list of allowed hosts |
+| `DATABASE_URL` | No | SQLite (`db.sqlite3`) | Database connection URL (e.g., `postgresql://user:pass@host/db`) |
+| `RENDER_EXTERNAL_HOSTNAME` | No | — | Auto-set by Render; appended to allowed hosts |
+
+### Deployment
 
 ```bash
 export DJANGO_SECRET_KEY="your-secret-key"
@@ -118,3 +130,7 @@ uv run python manage.py migrate
 uv run python manage.py seed_quiz
 uv run gunicorn quizzer.wsgi:application --bind 0.0.0.0:8000
 ```
+
+### Inspiration
+
+The idea was inspired by [Guess the Java Version](https://mostlynerdless.de/java-game/#alpha)
