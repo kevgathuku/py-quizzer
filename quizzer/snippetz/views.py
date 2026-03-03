@@ -9,8 +9,8 @@ from quizzer.snippetz.services import (
     QuizSession,
     calculate_score,
     create_quiz,
-    fetch_next_snippet,
-    get_choices_for_snippet,
+    fetch_next_question,
+    get_choices_for_question,
     submit_answer,
 )
 
@@ -57,9 +57,9 @@ def question(request):
             return redirect("quiz:results")
         return redirect("quiz:question")
 
-    match fetch_next_snippet(state):
+    match fetch_next_question(state):
         case Ok(snippet):
-            versions = get_choices_for_snippet(state, snippet)
+            versions = get_choices_for_question(state, snippet)
             return render(
                 request,
                 "snippetz/question.html",
@@ -71,7 +71,7 @@ def question(request):
                 },
             )
         case Err(e):
-            logger.warning("question GET: could not fetch snippet: %s", e)
+            logger.warning("question GET: could not fetch question: %s", e)
             return redirect("quiz:start")
 
 

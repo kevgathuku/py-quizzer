@@ -7,8 +7,8 @@ from quizzer.snippetz.services import (
     QuizState,
     calculate_score,
     create_quiz,
-    fetch_next_snippet,
-    get_choices_for_snippet,
+    fetch_next_question,
+    get_choices_for_question,
     submit_answer,
 )
 
@@ -147,23 +147,23 @@ class TestQuizSessionIO:
     def test_save_persists_answers(self, request_with_session, snippets):
         session = QuizSession(request_with_session)
         state = create_quiz()
-        snippet_id = state.question_ids[0]
+        question_id = state.question_ids[0]
         user_choice = snippets[0].first_appearance_id
 
-        state = state.record_answer(snippet_id, user_choice)
+        state = state.record_answer(question_id, user_choice)
         session.save(state)
 
         loaded = session.load().ok()
-        assert snippet_id in loaded.answers
-        assert loaded.answers[snippet_id] == user_choice
+        assert question_id in loaded.answers
+        assert loaded.answers[question_id] == user_choice
 
 
 @pytest.mark.django_db
 class TestSubmitAnswer:
     def _valid_choice(self, state):
         """Return a valid choice ID for the first unanswered question."""
-        snippet_id = state.next_unanswered_id().ok()
-        return state.choices[snippet_id][0]
+        question_id = state.next_unanswered_id().ok()
+        return state.choices[question_id][0]
 
     def test_records_answer_for_next_unanswered(self, snippets):
         state = create_quiz()
@@ -194,10 +194,10 @@ class TestSubmitAnswer:
 
 
 @pytest.mark.django_db
-class TestFetchNextSnippet:
+class TestFetchNextQuestion:
     def test_returns_first_unanswered(self, snippets):
         state = create_quiz()
-        result = fetch_next_snippet(state)
+        result = fetch_next_question(state)
         assert result.is_ok()
         assert result.ok().pk == state.question_ids[0]
 
@@ -206,7 +206,7 @@ class TestFetchNextSnippet:
         state = state.record_answer(
             state.question_ids[0], snippets[0].first_appearance_id
         )
-        current = fetch_next_snippet(state).ok()
+        current = fetch_next_question(state).ok()
         assert current.pk == state.question_ids[1]
 
 
@@ -260,23 +260,23 @@ class TestCalculateScore:
 
 
 @pytest.mark.django_db
-class TestGetChoicesForSnippet:
+class TestGetChoicesForQuestion:
     def test_always_includes_correct_answer(self, snippets):
         state = create_quiz()
-        for snippet_id in state.question_ids:
+        for question_id in state.question_ids:
             snippet = CodeSnippet.objects.select_related("first_appearance").get(
-                pk=snippet_id
+                pk=question_id
             )
-            choices = get_choices_for_snippet(state, snippet)
+            choices = get_choices_for_question(state, snippet)
             assert snippet.first_appearance in choices
 
     def test_limited_to_4(self, snippets, versions):
         PythonVersion.objects.create(major=3, minor=11)
         PythonVersion.objects.create(major=3, minor=12)
         state = create_quiz()
-        snippet_id = state.question_ids[0]
-        snippet = CodeSnippet.objects.get(pk=snippet_id)
-        choices = get_choices_for_snippet(state, snippet)
+        question_id = state.question_ids[0]
+        snippet = CodeSnippet.objects.get(pk=question_id)
+        choices = get_choices_for_question(state, snippet)
         assert len(choices) == 4
 
     def test_returns_all_when_fewer_than_4(self, db):
@@ -286,21 +286,21 @@ class TestGetChoicesForSnippet:
             title="Test", code="x = 1", first_appearance=v1
         )
         state = create_quiz()
-        choices = get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_question(state, snippet)
         assert choices == [v1, v2]
 
     def test_ordered_by_version(self, snippets):
         state = create_quiz()
         snippet = snippets[0]
-        choices = get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_question(state, snippet)
         version_tuples = [(v.major, v.minor) for v in choices]
         assert version_tuples == sorted(version_tuples)
 
     def test_stable_across_calls(self, snippets):
         state = create_quiz()
         snippet = snippets[0]
-        first_call = get_choices_for_snippet(state, snippet)
-        second_call = get_choices_for_snippet(state, snippet)
+        first_call = get_choices_for_question(state, snippet)
+        second_call = get_choices_for_question(state, snippet)
         assert first_call == second_call
 
     def test_handles_missing_choices_key(self, request_with_session, snippets):
@@ -312,5 +312,5 @@ class TestGetChoicesForSnippet:
         session = QuizSession(request_with_session)
         state = session.load().ok()
         snippet = snippets[0]
-        choices = get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_question(state, snippet)
         assert len(choices) > 0

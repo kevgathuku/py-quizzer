@@ -18,9 +18,9 @@ class QuizState:
     answers: dict[int, int]
 
     def next_unanswered_id(self) -> Result[int, str]:
-        for sid in self.question_ids:
-            if sid not in self.answers:
-                return Ok(sid)
+        for qid in self.question_ids:
+            if qid not in self.answers:
+                return Ok(qid)
         return Err("All questions answered")
 
     def is_finished(self) -> bool:
@@ -30,10 +30,10 @@ class QuizState:
     def current_question_number(self) -> int:
         return len(self.answers) + 1
 
-    def record_answer(self, snippet_id: int, answer_id: int) -> "QuizState":
+    def record_answer(self, question_id: int, answer_id: int) -> "QuizState":
         return replace(
             self,
-            answers={**self.answers, snippet_id: answer_id},
+            answers={**self.answers, question_id: answer_id},
         )
 
 
@@ -68,82 +68,82 @@ class QuizSession:
 
 
 def create_quiz(num_questions=5) -> QuizState:
-    snippet_ids = list(
+    question_ids = list(
         CodeSnippet.objects.order_by("?").values_list("pk", flat=True)[
             :num_questions
         ]
     )
     snippets = CodeSnippet.objects.select_related("first_appearance").in_bulk(
-        snippet_ids
+        question_ids
     )
     all_versions = list(PythonVersion.objects.all())
 
-    choices_by_snippet = {}
-    for snippet_id in snippet_ids:
-        snippet = snippets[snippet_id]
+    choices_by_question = {}
+    for question_id in question_ids:
+        snippet = snippets[question_id]
         correct = snippet.first_appearance
         other_versions = [v for v in all_versions if v.pk != correct.pk]
         if len(other_versions) >= NUM_CHOICES - 1:
             other_versions = random.sample(other_versions, NUM_CHOICES - 1)
         choice_version_pks = [correct.pk] + [v.pk for v in other_versions]
-        choices_by_snippet[snippet_id] = choice_version_pks
+        choices_by_question[question_id] = choice_version_pks
 
     return QuizState(
-        question_ids=tuple(snippet_ids),
-        choices=choices_by_snippet,
+        question_ids=tuple(question_ids),
+        choices=choices_by_question,
         answers={},
     )
 
 
 def submit_answer(state: QuizState, answer_id: int) -> Result[QuizState, str]:
     match state.next_unanswered_id():
-        case Ok(snippet_id):
-            valid_choices = state.choices.get(snippet_id, [])
+        case Ok(question_id):
+            valid_choices = state.choices.get(question_id, [])
             if answer_id not in valid_choices:
                 return Err(
-                    f"Invalid answer {answer_id} for snippet {snippet_id}"
+                    f"Invalid answer {answer_id} for question {question_id}"
                 )
-            return Ok(state.record_answer(snippet_id, answer_id))
+            return Ok(state.record_answer(question_id, answer_id))
         case Err() as err:
             return err
 
 
-def fetch_next_snippet(state: QuizState) -> Result[CodeSnippet, str]:
+def fetch_next_question(state: QuizState) -> Result[CodeSnippet, str]:
     match state.next_unanswered_id():
-        case Ok(snippet_id):
+        case Ok(question_id):
             return Ok(
                 CodeSnippet.objects.select_related("first_appearance").get(
-                    pk=snippet_id
+                    pk=question_id
                 )
             )
         case Err() as err:
             return err
 
 
-def get_choices_for_snippet(state: QuizState, snippet) -> list:
-    choice_version_pks = state.choices.get(snippet.pk)
+def get_choices_for_question(state: QuizState, question) -> list:
+    choice_version_pks = state.choices.get(question.pk)
 
     if choice_version_pks is None:
         logger.warning(
-            "get_choices_for_snippet: no stored choices for snippet %d, sampling random",
-            snippet.pk,
+            "get_choices_for_question: no stored choices for question %d, sampling random",
+            question.pk,
         )
-        return _sample_random_choices(snippet)
+        return _sample_random_choices(question)
 
     versions = PythonVersion.objects.in_bulk()
     missing = [pk for pk in choice_version_pks if pk not in versions]
     if missing:
         logger.warning(
-            "get_choices_for_snippet: version pks %s not found in db for snippet %d",
+            "get_choices_for_question: version pks %s not found in db for question %d",
             missing,
-            snippet.pk,
+            question.pk,
         )
     choices = [versions[pk] for pk in choice_version_pks if pk in versions]
     return sorted(choices, key=lambda v: (v.major, v.minor))
 
 
-def _sample_random_choices(snippet):
-    correct = snippet.first_appearance
+def _sample_random_choices(question):
+    correct = question.first_appearance
     others = list(
         PythonVersion.objects.exclude(pk=correct.pk).order_by("?")[
             : NUM_CHOICES - 1
@@ -160,15 +160,15 @@ def calculate_score(state: QuizState) -> dict:
     )
     versions = PythonVersion.objects.in_bulk()
 
-    for snippet_id in state.question_ids:
-        snippet = snippets[snippet_id]
-        user_answer_id = state.answers.get(snippet_id)
+    for question_id in state.question_ids:
+        snippet = snippets[question_id]
+        user_answer_id = state.answers.get(question_id)
         user_answer = versions.get(user_answer_id) if user_answer_id else None
         if user_answer_id and not user_answer:
             logger.warning(
-                "calculate_score: answer_id %s for snippet %d not found in db",
+                "calculate_score: answer_id %s for question %d not found in db",
                 user_answer_id,
-                snippet_id,
+                question_id,
             )
         is_correct = user_answer_id == snippet.first_appearance_id
         if is_correct:

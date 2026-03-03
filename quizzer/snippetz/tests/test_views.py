@@ -70,12 +70,12 @@ class TestQuestionView:
     def test_post_answer_redirects(self, client, snippets):
         client.get("/quiz/start/")
         session = client.session
-        snippet_id = session["quiz"]["question_ids"][0]
-        version = PythonVersion.objects.first()
+        question_id = session["quiz"]["question_ids"][0]
+        choice_id = session["quiz"]["choices"][str(question_id)][0]
 
         response = client.post(
             "/quiz/question/",
-            {"answer_id": version.pk},
+            {"answer_id": choice_id},
         )
         assert response.status_code == 302
 
@@ -83,13 +83,13 @@ class TestQuestionView:
 @pytest.mark.django_db
 class TestResultsView:
     def _complete_quiz(self, client, snippets):
-        """Start and answer all questions."""
+        """Start and answer all questions correctly."""
         client.get("/quiz/start/")
         session = client.session
         snippet_map = {s.pk: s for s in snippets}
         for qid in session["quiz"]["question_ids"]:
-            version = snippet_map[qid].first_appearance
-            client.post("/quiz/question/", {"answer_id": version.pk})
+            correct_id = snippet_map[qid].first_appearance_id
+            client.post("/quiz/question/", {"answer_id": correct_id})
 
     def test_results_renders_with_score(self, client, snippets):
         self._complete_quiz(client, snippets)
