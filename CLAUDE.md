@@ -8,8 +8,8 @@ Django web application — a Python Version Quiz that displays code snippets and
 
 ## Tech Stack
 
-- Python 3.12+ / Django 6.0
-- SQLite (all environments, including production)
+- Python 3.14+ / Django 6.0
+- SQLite (local development), PostgreSQL (production via `DATABASE_URL`)
 - pytest + pytest-django (testing, 80%+ coverage required)
 - Gunicorn + WhiteNoise (deployment)
 
@@ -44,13 +44,13 @@ uv run python manage.py seed_quiz
 
 - `quizzer/` — Django project config (settings, urls, wsgi)
 - `quizzer/snippetz/` — Main app (registered as `quizzer.snippetz` in INSTALLED_APPS)
-  - models, views, services, forms, admin, management commands
+  - models, views, services, admin, management commands
   - `tests/` — test package with `test_models.py`, `test_services.py`, `test_views.py`, `test_integration.py`
   - `templates/snippetz/` — Django templates
 
 ### Key Models
 
-- **PythonVersion** — `major`/`minor` fields, semantic ordering, `unique_together`
+- **PythonVersion** — `major`/`minor` fields, semantic ordering, `UniqueConstraint`
 - **CodeSnippet** — `title`, `code` (syntax-validated via `ast.parse`), `first_appearance` FK (PROTECT), `explanation`
 
 ### Session Design
@@ -62,7 +62,7 @@ Minimal deterministic state stored in Django sessions:
 
 ### Service Layer (`services.py`)
 
-`QuizSession` wrapper class handles: `start()`, `get_current_snippet()`, `submit_answer()`, `is_finished()`, `calculate_score()`, `reset()`. No business logic in views or templates.
+`QuizSession` wrapper class handles: `create_quiz()`, `fetch_next_snippet()`, `get_choices_for_snippet()`, `calculate_score()`. `QuizState` is an immutable dataclass with `next_unanswered_id()`, `is_finished()`, `record_answer()`. No business logic in views or templates.
 
 ### Routes (URL namespace: `quiz:`)
 
@@ -70,7 +70,7 @@ Minimal deterministic state stored in Django sessions:
 - `GET /quiz/question/` (`quiz:question`) — display current question
 - `POST /quiz/question/` (`quiz:question`) — submit answer
 - `GET /quiz/results/` (`quiz:results`) — show results
-- `GET /` — redirects to `/quiz/start/`
+- `GET /` (`home`) — landing page
 
 ## Design Constraints
 
