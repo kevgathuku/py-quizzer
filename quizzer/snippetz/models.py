@@ -16,7 +16,11 @@ class PythonVersion(models.Model):
 
     class Meta:
         ordering = ["major", "minor"]
-        unique_together = ("major", "minor")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["major", "minor"], name="unique_python_version"
+            ),
+        ]
 
     def __str__(self):
         return f"{self.major}.{self.minor}"
