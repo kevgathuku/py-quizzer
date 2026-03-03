@@ -49,19 +49,22 @@ def question(request):
                 return redirect("quiz:results")
             return redirect("quiz:question")
 
-    snippet = quiz.fetch_next_snippet(state).ok()
-    versions = quiz.get_choices_for_snippet(state, snippet)
-
-    return render(
-        request,
-        "snippetz/question.html",
-        {
-            "snippet": snippet,
-            "versions": versions,
-            "question_number": state.current_question_number,
-            "total_questions": len(state.question_ids),
-        },
-    )
+    match quiz.fetch_next_snippet(state):
+        case Ok(snippet):
+            versions = quiz.get_choices_for_snippet(state, snippet)
+            return render(
+                request,
+                "snippetz/question.html",
+                {
+                    "snippet": snippet,
+                    "versions": versions,
+                    "question_number": state.current_question_number,
+                    "total_questions": len(state.question_ids),
+                },
+            )
+        case Err(e):
+            logger.warning("question GET: could not fetch snippet: %s", e)
+            return redirect("quiz:start")
 
 
 def results(request):
