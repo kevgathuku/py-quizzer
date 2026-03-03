@@ -2,7 +2,15 @@ import pytest
 from django.test import RequestFactory
 
 from quizzer.snippetz.models import CodeSnippet, PythonVersion
-from quizzer.snippetz.services import QuizSession, QuizState
+from quizzer.snippetz.services import (
+    QuizSession,
+    QuizState,
+    calculate_score,
+    create_quiz,
+    fetch_next_snippet,
+    get_choices_for_snippet,
+    submit_answer,
+)
 
 
 @pytest.fixture
@@ -102,88 +110,109 @@ class TestQuizState:
 
 
 @pytest.mark.django_db
-class TestQuizSessionStart:
-    def test_start_creates_state_with_question_ids(
-        self, request_with_session, snippets
-    ):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
-        assert state is not None
+class TestCreateQuiz:
+    def test_creates_state_with_question_ids(self, snippets):
+        state = create_quiz()
         assert len(state.question_ids) == 5
         assert state.answers == {}
 
-    def test_start_saves_to_session(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        quiz.create_quiz()
-        assert request_with_session.session.get("quiz") is not None
-
-    def test_start_with_fewer_than_default_snippets(
-        self, request_with_session, versions
-    ):
+    def test_with_fewer_than_default_snippets(self, versions):
         CodeSnippet.objects.create(
             title="S1", code="a = 1", first_appearance=versions[0]
         )
         CodeSnippet.objects.create(
             title="S2", code="b = 2", first_appearance=versions[1]
         )
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+        state = create_quiz()
         assert len(state.question_ids) == 2
 
 
 @pytest.mark.django_db
-class TestQuizSessionProgression:
-    def test_fetch_next_snippet_returns_first_unanswered(
-        self, request_with_session, snippets
-    ):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
-        result = quiz.fetch_next_snippet(state)
-        assert result.is_ok()
-        assert result.ok().pk == state.question_ids[0]
+class TestQuizSessionIO:
+    def test_save_and_load_round_trip(self, request_with_session, snippets):
+        session = QuizSession(request_with_session)
+        state = create_quiz()
+        session.save(state)
 
-    def test_record_answer_stores_correctly(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+        loaded = session.load().ok()
+        assert loaded.question_ids == state.question_ids
+        assert loaded.choices == state.choices
+        assert loaded.answers == state.answers
+
+    def test_load_returns_err_without_session_data(self, request_with_session):
+        session = QuizSession(request_with_session)
+        result = session.load()
+        assert result.is_err()
+
+    def test_save_persists_answers(self, request_with_session, snippets):
+        session = QuizSession(request_with_session)
+        state = create_quiz()
         snippet_id = state.question_ids[0]
         user_choice = snippets[0].first_appearance_id
 
-        new_state = state.record_answer(snippet_id, user_choice)
-        quiz.save(new_state)
+        state = state.record_answer(snippet_id, user_choice)
+        session.save(state)
 
-        loaded = quiz.load().ok()
+        loaded = session.load().ok()
         assert snippet_id in loaded.answers
         assert loaded.answers[snippet_id] == user_choice
 
-    def test_current_advances_after_answer(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
 
+@pytest.mark.django_db
+class TestSubmitAnswer:
+    def test_records_answer_for_next_unanswered(self, snippets):
+        state = create_quiz()
+        first_id = state.question_ids[0]
+        result = submit_answer(state, 99)
+        assert result.is_ok()
+        new_state = result.ok()
+        assert new_state.answers[first_id] == 99
+
+    def test_returns_err_when_all_answered(self, snippets):
+        state = create_quiz()
+        for qid in state.question_ids:
+            state = state.record_answer(qid, 99)
+        result = submit_answer(state, 99)
+        assert result.is_err()
+
+    def test_advances_to_next_question(self, snippets):
+        state = create_quiz()
+        new_state = submit_answer(state, 99).ok()
+        assert new_state.next_unanswered_id().ok() == state.question_ids[1]
+
+
+@pytest.mark.django_db
+class TestFetchNextSnippet:
+    def test_returns_first_unanswered(self, snippets):
+        state = create_quiz()
+        result = fetch_next_snippet(state)
+        assert result.is_ok()
+        assert result.ok().pk == state.question_ids[0]
+
+    def test_advances_after_answer(self, snippets):
+        state = create_quiz()
         state = state.record_answer(
             state.question_ids[0], snippets[0].first_appearance_id
         )
-        quiz.save(state)
-        state = quiz.load().ok()
-        current = quiz.fetch_next_snippet(state).ok()
+        current = fetch_next_snippet(state).ok()
         assert current.pk == state.question_ids[1]
 
-    def test_is_finished_false_when_questions_remain(
-        self, request_with_session, snippets
-    ):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+
+@pytest.mark.django_db
+class TestQuizProgression:
+    def test_is_finished_false_when_questions_remain(self, snippets):
+        state = create_quiz()
         assert state.is_finished() is False
 
-    def test_is_finished_true_when_all_answered(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_is_finished_true_when_all_answered(self, snippets):
+        state = create_quiz()
         for qid in state.question_ids:
             state = state.record_answer(qid, snippets[0].first_appearance_id)
         assert state.is_finished() is True
 
 
 @pytest.mark.django_db
-class TestQuizSessionResults:
+class TestCalculateScore:
     def _answer_all(self, state, snippets):
         snippet_map = {s.pk: s for s in snippets}
         for qid in state.question_ids:
@@ -191,30 +220,25 @@ class TestQuizSessionResults:
             state = state.record_answer(qid, snippet.first_appearance_id)
         return state
 
-    def test_calculate_score_correct_count(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_correct_count(self, snippets):
+        state = create_quiz()
         state = self._answer_all(state, snippets)
-        result = quiz.calculate_score(state)
+        result = calculate_score(state)
         assert result["score"] == result["total"]
 
-    def test_calculate_score_with_wrong_answers(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_with_wrong_answers(self, snippets):
+        state = create_quiz()
         wrong_version = PythonVersion.objects.create(major=1, minor=0)
         for qid in state.question_ids:
             state = state.record_answer(qid, wrong_version.pk)
-        result = quiz.calculate_score(state)
+        result = calculate_score(state)
         assert result["score"] == 0
         assert result["total"] == len(state.question_ids)
 
-    def test_calculate_score_breakdown_has_is_correct(
-        self, request_with_session, snippets
-    ):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_breakdown_has_expected_keys(self, snippets):
+        state = create_quiz()
         state = self._answer_all(state, snippets)
-        result = quiz.calculate_score(state)
+        result = calculate_score(state)
         assert len(result["breakdown"]) == result["total"]
         for item in result["breakdown"]:
             assert "is_correct" in item
@@ -223,68 +247,58 @@ class TestQuizSessionResults:
             assert "correct_answer" in item
 
 
-
 @pytest.mark.django_db
-class TestQuizSessionChoices:
-    def test_choices_always_includes_correct_answer(
-        self, request_with_session, snippets
-    ):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+class TestGetChoicesForSnippet:
+    def test_always_includes_correct_answer(self, snippets):
+        state = create_quiz()
         for snippet_id in state.question_ids:
             snippet = CodeSnippet.objects.select_related("first_appearance").get(
                 pk=snippet_id
             )
-            choices = quiz.get_choices_for_snippet(state, snippet)
+            choices = get_choices_for_snippet(state, snippet)
             assert snippet.first_appearance in choices
 
-    def test_choices_limited_to_4(self, request_with_session, snippets, versions):
+    def test_limited_to_4(self, snippets, versions):
         PythonVersion.objects.create(major=3, minor=11)
         PythonVersion.objects.create(major=3, minor=12)
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+        state = create_quiz()
         snippet_id = state.question_ids[0]
         snippet = CodeSnippet.objects.get(pk=snippet_id)
-        choices = quiz.get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_snippet(state, snippet)
         assert len(choices) == 4
 
-    def test_choices_returns_all_when_fewer_than_4(self, request_with_session, db):
+    def test_returns_all_when_fewer_than_4(self, db):
         v1 = PythonVersion.objects.create(major=3, minor=6)
         v2 = PythonVersion.objects.create(major=3, minor=8)
         snippet = CodeSnippet.objects.create(
             title="Test", code="x = 1", first_appearance=v1
         )
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
-        choices = quiz.get_choices_for_snippet(state, snippet)
+        state = create_quiz()
+        choices = get_choices_for_snippet(state, snippet)
         assert choices == [v1, v2]
 
-    def test_choices_ordered_by_version(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_ordered_by_version(self, snippets):
+        state = create_quiz()
         snippet = snippets[0]
-        choices = quiz.get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_snippet(state, snippet)
         version_tuples = [(v.major, v.minor) for v in choices]
         assert version_tuples == sorted(version_tuples)
 
-    def test_choices_stable_across_calls(self, request_with_session, snippets):
-        quiz = QuizSession(request_with_session)
-        state = quiz.create_quiz()
+    def test_stable_across_calls(self, snippets):
+        state = create_quiz()
         snippet = snippets[0]
-        first_call = quiz.get_choices_for_snippet(state, snippet)
-        second_call = quiz.get_choices_for_snippet(state, snippet)
+        first_call = get_choices_for_snippet(state, snippet)
+        second_call = get_choices_for_snippet(state, snippet)
         assert first_call == second_call
 
-    def test_get_choices_handles_missing_choices_key(
-        self, request_with_session, snippets
-    ):
+    def test_handles_missing_choices_key(self, request_with_session, snippets):
         request_with_session.session["quiz"] = {
             "question_ids": [s.pk for s in snippets[:5]],
             "answers": {},
             "choices": {},
         }
-        quiz = QuizSession(request_with_session)
-        state = quiz.load().ok()
+        session = QuizSession(request_with_session)
+        state = session.load().ok()
         snippet = snippets[0]
-        choices = quiz.get_choices_for_snippet(state, snippet)
+        choices = get_choices_for_snippet(state, snippet)
         assert len(choices) > 0
