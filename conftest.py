@@ -1,5 +1,3 @@
-from django.test import override_settings
-
 import pytest
 
 SIMPLE_STORAGES = {

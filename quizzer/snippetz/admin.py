@@ -14,16 +14,6 @@ class CodeSnippetAdminForm(forms.ModelForm):
             ),
         }
 
-    def clean_code(self):
-        import ast
-
-        code = self.cleaned_data["code"]
-        try:
-            ast.parse(code)
-        except SyntaxError as e:
-            raise forms.ValidationError(f"Invalid Python syntax: {e}")
-        return code
-
 
 @admin.register(PythonVersion)
 class PythonVersionAdmin(admin.ModelAdmin):
