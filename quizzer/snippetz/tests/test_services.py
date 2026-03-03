@@ -41,16 +41,16 @@ class TestQuizState:
     def test_next_unanswered_id_returns_first_unanswered(self):
         state = QuizState(
             question_ids=(1, 2, 3),
-            choices={"1": [10], "2": [10], "3": [10]},
-            answers={"1": 10},
+            choices={1: [10], 2: [10], 3: [10]},
+            answers={1: 10},
         )
         assert state.next_unanswered_id().ok() == 2
 
     def test_next_unanswered_id_returns_err_when_all_answered(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={"1": [10], "2": [10]},
-            answers={"1": 10, "2": 10},
+            choices={1: [10], 2: [10]},
+            answers={1: 10, 2: 10},
         )
         result = state.next_unanswered_id()
         assert result.is_err()
@@ -59,46 +59,46 @@ class TestQuizState:
     def test_is_finished_false_when_questions_remain(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={"1": [10], "2": [10]},
-            answers={"1": 10},
+            choices={1: [10], 2: [10]},
+            answers={1: 10},
         )
         assert state.is_finished() is False
 
     def test_is_finished_true_when_all_answered(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={"1": [10], "2": [10]},
-            answers={"1": 10, "2": 10},
+            choices={1: [10], 2: [10]},
+            answers={1: 10, 2: 10},
         )
         assert state.is_finished() is True
 
     def test_current_question_number(self):
         state = QuizState(
             question_ids=(1, 2, 3),
-            choices={"1": [10], "2": [10], "3": [10]},
-            answers={"1": 10},
+            choices={1: [10], 2: [10], 3: [10]},
+            answers={1: 10},
         )
         assert state.current_question_number == 2
 
     def test_record_answer_returns_new_state(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={"1": [10], "2": [10]},
+            choices={1: [10], 2: [10]},
             answers={},
         )
         new_state = state.record_answer(1, 10)
         assert new_state is not state
-        assert new_state.answers == {"1": 10}
+        assert new_state.answers == {1: 10}
         assert state.answers == {}  # original unchanged
 
     def test_record_answer_preserves_existing_answers(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={"1": [10], "2": [10]},
-            answers={"1": 10},
+            choices={1: [10], 2: [10]},
+            answers={1: 10},
         )
         new_state = state.record_answer(2, 20)
-        assert new_state.answers == {"1": 10, "2": 20}
+        assert new_state.answers == {1: 10, 2: 20}
 
 
 @pytest.mark.django_db
@@ -152,8 +152,8 @@ class TestQuizSessionProgression:
         quiz.save(new_state)
 
         loaded = quiz.load().ok()
-        assert str(snippet_id) in loaded.answers
-        assert loaded.answers[str(snippet_id)] == user_choice
+        assert snippet_id in loaded.answers
+        assert loaded.answers[snippet_id] == user_choice
 
     def test_current_advances_after_answer(self, request_with_session, snippets):
         quiz = QuizSession(request_with_session)

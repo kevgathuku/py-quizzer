@@ -14,12 +14,12 @@ class QuizState:
     """Immutable quiz state. All transformations return new instances."""
 
     question_ids: tuple[int, ...]
-    choices: dict[str, list[int]]
-    answers: dict[str, int]
+    choices: dict[int, list[int]]
+    answers: dict[int, int]
 
     def next_unanswered_id(self) -> Result[int, str]:
         for sid in self.question_ids:
-            if str(sid) not in self.answers:
+            if sid not in self.answers:
                 return Ok(sid)
         return Err("All questions answered")
 
@@ -33,7 +33,7 @@ class QuizState:
     def record_answer(self, snippet_id: int, answer_id: int) -> "QuizState":
         return replace(
             self,
-            answers={**self.answers, str(snippet_id): answer_id},
+            answers={**self.answers, snippet_id: answer_id},
         )
 
 
@@ -54,16 +54,16 @@ class QuizSession:
         return Ok(
             QuizState(
                 question_ids=tuple(data["question_ids"]),
-                choices=data["choices"],
-                answers=data["answers"],
+                choices={int(k): v for k, v in data["choices"].items()},
+                answers={int(k): v for k, v in data["answers"].items()},
             )
         )
 
     def save(self, state: QuizState) -> None:
         self.session["quiz"] = {
             "question_ids": list(state.question_ids),
-            "choices": state.choices,
-            "answers": state.answers,
+            "choices": {str(k): v for k, v in state.choices.items()},
+            "answers": {str(k): v for k, v in state.answers.items()},
         }
 
     def create_quiz(self, num_questions=5) -> QuizState:
@@ -85,7 +85,7 @@ class QuizSession:
             if len(other_versions) >= NUM_CHOICES - 1:
                 other_versions = random.sample(other_versions, NUM_CHOICES - 1)
             choice_version_pks = [correct.pk] + [v.pk for v in other_versions]
-            choices_by_snippet[str(snippet_id)] = choice_version_pks
+            choices_by_snippet[snippet_id] = choice_version_pks
 
         state = QuizState(
             question_ids=tuple(snippet_ids),
@@ -107,7 +107,7 @@ class QuizSession:
                 return err
 
     def get_choices_for_snippet(self, state: QuizState, snippet) -> list:
-        choice_version_pks = state.choices.get(str(snippet.pk))
+        choice_version_pks = state.choices.get(snippet.pk)
 
         if choice_version_pks is None:
             logger.warning(
@@ -146,7 +146,7 @@ class QuizSession:
 
         for snippet_id in state.question_ids:
             snippet = snippets[snippet_id]
-            user_answer_id = state.answers.get(str(snippet_id))
+            user_answer_id = state.answers.get(snippet_id)
             user_answer = versions.get(user_answer_id) if user_answer_id else None
             if user_answer_id and not user_answer:
                 logger.warning(
