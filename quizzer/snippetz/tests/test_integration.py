@@ -45,11 +45,11 @@ class TestFullQuizFlow:
         assert response.context["total"] == 5
         assert len(response.context["breakdown"]) == 5
 
-    def test_root_redirects_to_start(self, seeded_db):
+    def test_root_renders_landing_page(self, seeded_db):
         client = Client()
         response = client.get("/")
-        assert response.status_code == 302
-        assert response.url == "/quiz/start/"
+        assert response.status_code == 200
+        assert "start.html" in response.templates[0].name
 
     def test_admin_accessible(self, seeded_db):
         from django.urls import reverse

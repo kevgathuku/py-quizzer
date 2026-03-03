@@ -10,6 +10,10 @@ from quizzer.snippetz.services import QuizSession
 logger = logging.getLogger(__name__)
 
 
+def home(request):
+    return render(request, "snippetz/start.html")
+
+
 def start_quiz(request):
     if not CodeSnippet.objects.exists():
         return render(request, "snippetz/no_snippets.html")
