@@ -1,14 +1,9 @@
-{% load static %}
+{% extends "snippetz/base.html" %}
 {% load pygments_tags %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Question {{ question_number }} of {{ total_questions }} - Python Version Quiz</title>
-    <link rel="stylesheet" href="{% static 'snippetz/pygments.css' %}">
-</head>
-<body>
+
+{% block title %}Question {{ question_number }} of {{ total_questions }} - Python Version Quiz{% endblock %}
+
+{% block content %}
     <h1>Question {{ question_number }} of {{ total_questions }}</h1>
     <h2>{{ snippet.title }}</h2>
     {{ snippet.code|pygmentize }}
@@ -25,5 +20,4 @@
         {% endfor %}
         <button type="submit">Submit Answer</button>
     </form>
-</body>
-</html>
+{% endblock %}

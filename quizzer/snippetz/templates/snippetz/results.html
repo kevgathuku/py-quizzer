@@ -1,20 +1,15 @@
-{% load static %}
+{% extends "snippetz/base.html" %}
 {% load pygments_tags %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results - Python Version Quiz</title>
-    <link rel="stylesheet" href="{% static 'snippetz/pygments.css' %}">
-</head>
-<body>
+
+{% block title %}Results - Python Version Quiz{% endblock %}
+
+{% block content %}
     <h1>Quiz Results</h1>
     <p>You scored <strong>{{ score }}</strong> out of <strong>{{ total }}</strong>.</p>
 
     <h2>Question Breakdown</h2>
     {% for item in breakdown %}
-    <div style="margin-bottom: 1em; padding: 0.5em; border: 1px solid #ccc;">
+    <div class="result-card">
         <h3>{{ item.snippet.title }} {% if item.is_correct %}&#10004;{% else %}&#10008;{% endif %}</h3>
         {{ item.snippet.code|pygmentize }}
         <p>Your answer: <strong>Python {{ item.user_answer }}</strong></p>
@@ -26,5 +21,4 @@
     {% endfor %}
 
     <a href="{% url 'quiz:start' %}">Take Another Quiz</a>
-</body>
-</html>
+{% endblock %}

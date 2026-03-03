@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Version Quiz</title>
-</head>
-<body>
+{% extends "snippetz/base.html" %}
+
+{% block content %}
     <h1>Python Version Quiz</h1>
     <p>Test your knowledge of Python version features!</p>
     <p>You'll be shown code snippets and asked to identify the earliest Python version that supports each one.</p>
     <a href="{% url 'quiz:start' %}">Start Quiz</a>
-</body>
-</html>
+{% endblock %}
