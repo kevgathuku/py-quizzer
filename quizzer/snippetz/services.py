@@ -98,6 +98,11 @@ def create_quiz(num_questions=5) -> QuizState:
 def submit_answer(state: QuizState, answer_id: int) -> Result[QuizState, str]:
     match state.next_unanswered_id():
         case Ok(snippet_id):
+            valid_choices = state.choices.get(snippet_id, [])
+            if answer_id not in valid_choices:
+                return Err(
+                    f"Invalid answer {answer_id} for snippet {snippet_id}"
+                )
             return Ok(state.record_answer(snippet_id, answer_id))
         case Err() as err:
             return err

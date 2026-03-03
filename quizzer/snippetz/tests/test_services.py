@@ -102,7 +102,7 @@ class TestQuizState:
     def test_record_answer_preserves_existing_answers(self):
         state = QuizState(
             question_ids=(1, 2),
-            choices={1: [10], 2: [10]},
+            choices={1: [10], 2: [20]},
             answers={1: 10},
         )
         new_state = state.record_answer(2, 20)
@@ -160,25 +160,37 @@ class TestQuizSessionIO:
 
 @pytest.mark.django_db
 class TestSubmitAnswer:
+    def _valid_choice(self, state):
+        """Return a valid choice ID for the first unanswered question."""
+        snippet_id = state.next_unanswered_id().ok()
+        return state.choices[snippet_id][0]
+
     def test_records_answer_for_next_unanswered(self, snippets):
         state = create_quiz()
         first_id = state.question_ids[0]
-        result = submit_answer(state, 99)
+        choice = self._valid_choice(state)
+        result = submit_answer(state, choice)
         assert result.is_ok()
-        new_state = result.ok()
-        assert new_state.answers[first_id] == 99
+        assert result.ok().answers[first_id] == choice
 
     def test_returns_err_when_all_answered(self, snippets):
         state = create_quiz()
         for qid in state.question_ids:
-            state = state.record_answer(qid, 99)
+            state = state.record_answer(qid, state.choices[qid][0])
         result = submit_answer(state, 99)
         assert result.is_err()
 
     def test_advances_to_next_question(self, snippets):
         state = create_quiz()
-        new_state = submit_answer(state, 99).ok()
+        choice = self._valid_choice(state)
+        new_state = submit_answer(state, choice).ok()
         assert new_state.next_unanswered_id().ok() == state.question_ids[1]
+
+    def test_rejects_answer_not_in_choices(self, snippets):
+        state = create_quiz()
+        result = submit_answer(state, 999999)
+        assert result.is_err()
+        assert "Invalid answer" in result.err()
 
 
 @pytest.mark.django_db
